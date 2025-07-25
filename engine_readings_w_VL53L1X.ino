@@ -55,7 +55,7 @@ const int MIN_SAMPLES_FOR_VALID_THROW = 20;  // we need this many samples before
 // engine calculation settings
 const float PISTON_AREA = 50.0;          // WARNING: fixed piston head area, must be different for each installation
 const float PRESSURE_MULTIPLIER = 0.5;   // simplified pressure factor
-const float TORQUE_SCALE_FACTOR = 0.02;  // scale torque for reasonable LED range
+const float TORQUE_SCALE_FACTOR = 0.2;   // scale torque for reasonable LED range
 const float MAX_DISPLAY_RPM = 200.0;     // maximum rpm for display scaling
 const float MAX_DISPLAY_TORQUE = 100.0;  // maximum torque for display scaling
 const float MAX_DISPLAY_HP = 10.0;       // maximum HP for display scaling
@@ -71,7 +71,7 @@ const int HP_PWM_CHANNEL = 1;
 // constants for RunningAverage objects (see below)
 const int SAMPLE_WINDOW_SIZE = 10;   // number of samples to average for smoothing raw readings
 const int MIN_MAX_WINDOW_SIZE = 50;  // window size for tracking min/max values
-const int RPM_WINDOW_SIZE = 5;
+const int RPM_WINDOW_SIZE = 10;
 // ============================================================================
 
 // RunningAverage helps us calculate the running average of a continuous sample of readings
@@ -123,11 +123,10 @@ void setup() {
   Serial.begin(115200);
   Wire.begin();
 
-
-  //pinMode(TORQUE_LED_PIN, OUTPUT);
+  pinMode(TORQUE_LED_PIN, OUTPUT);
   pinMode(HP_LED_PIN, OUTPUT);
 
-  //analogWrite(TORQUE_LED_PIN, 0);
+  analogWrite(TORQUE_LED_PIN, 0);
   analogWrite(HP_LED_PIN, 0);
 
   sensor.setTimeout(500);
@@ -255,13 +254,10 @@ void calculateRPMs() {
 
   // calculate center position (midpoint between min and max)
   float centerPosition = (maxPosition + minPosition) / 2.0;
-  float distanceFromCenter = abs(currentPosition - centerPosition);
+  bool crossedCenter = (lastPosition - centerPosition) * (currentPosition - centerPosition) < 0;
 
-  // check if we're near the center and direction changed (zero crossing)
-  if (distanceFromCenter < crankshaftThrow * 0.3 &&  // near center
-      currentDirectionUp != lastDirectionUp &&       // direction changed
-      crankshaftThrow > MIN_THROW_FOR_MOTION) {      // valid throw
-
+  // check if we've crossed the center of the motion to calculate RPMs
+  if (crossedCenter && crankshaftThrow > MIN_THROW_FOR_MOTION) {
     // calculate cycle period (two zero crossings = one complete cycle)
     unsigned long currentTime = millis();
     if (lastZeroCrossing > 0) {
@@ -508,12 +504,12 @@ void outputData() {
   // view readings in Serial Plotter
   Serial.print(currentPosition);
   Serial.print(",");
-  Serial.print(minPosition);
-  Serial.print(",");
-  Serial.print(maxPosition);
-  Serial.print(",");
-  Serial.print(crankshaftThrow);
-  Serial.print(",");
+  // Serial.print(minPosition);
+  // Serial.print(",");
+  // Serial.print(maxPosition);
+  // Serial.print(",");
+  // Serial.print(crankshaftThrow);
+  // Serial.print(",");
   // engine parameters
   Serial.print(rpm);
   Serial.print(",");
