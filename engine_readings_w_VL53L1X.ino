@@ -57,16 +57,12 @@ const float PISTON_AREA = 50.0;          // WARNING: fixed piston head area, mus
 const float PRESSURE_MULTIPLIER = 0.5;   // simplified pressure factor
 const float TORQUE_SCALE_FACTOR = 0.2;   // scale torque for reasonable LED range
 const float MAX_DISPLAY_RPM = 200.0;     // maximum rpm for display scaling
-const float MAX_DISPLAY_TORQUE = 100.0;  // maximum torque for display scaling
-const float MAX_DISPLAY_HP = 10.0;       // maximum HP for display scaling
+const float MAX_DISPLAY_TORQUE = 700.0;  // maximum torque for display scaling
+const float MAX_DISPLAY_HP = 110.0;      // maximum HP for display scaling
 
 // LED PWM pin configuration values
 const int TORQUE_LED_PIN = 18;
 const int HP_LED_PIN = 19;
-const int LED_PWM_FREQUENCY = 5000;
-const int LED_PWM_RESOLUTION = 8;
-const int TORQUE_PWM_CHANNEL = 0;
-const int HP_PWM_CHANNEL = 1;
 
 // constants for RunningAverage objects (see below)
 const int SAMPLE_WINDOW_SIZE = 10;   // number of samples to average for smoothing raw readings
@@ -174,7 +170,7 @@ void loop() {
       calculateEngineParameters();
       updateLEDs();
 
-      outputData();
+      //outputData();
     }
   }
   // small delay to prevent overwhelming system
@@ -378,15 +374,20 @@ void calculateEngineParameters() {
 
 // ========== LED UPDATE FUNCTION ==========
 void updateLEDs() {
-  // Map torque to PWM value (0-255)
-  int torquePWM = map(torque * 10, 0, MAX_DISPLAY_TORQUE * 10, 0, 255);
-  torquePWM = constrain(torquePWM, 0, 255);
+  // Scale torque and HP to 0–255 for PWM
+  int torquePWM = (int)(255.0 * torque / MAX_DISPLAY_TORQUE);
+  int hpPWM = (int)(255.0 * horsepower / MAX_DISPLAY_HP);
 
-  // Map horsepower to PWM value (0-255)
-  int hpPWM = map(horsepower * 10, 0, MAX_DISPLAY_HP * 10, 0, 255);
+  // clamp values to not go above or below optimal PWM strength
+  torquePWM = constrain(torquePWM, 0, 255);
   hpPWM = constrain(hpPWM, 0, 255);
 
-  // Update LED brightness
+  Serial.print(torquePWM);
+  Serial.print(",");
+  Serial.print(hpPWM);
+  Serial.println();
+
+  // Send to PWM pins
   analogWrite(TORQUE_LED_PIN, torquePWM);
   analogWrite(HP_LED_PIN, hpPWM);
 }
@@ -502,8 +503,8 @@ void attemptSystemRecovery() {
 // ========== DATA OUTPUT FUNCTION ==========
 void outputData() {
   // view readings in Serial Plotter
-  Serial.print(currentPosition);
-  Serial.print(",");
+  // Serial.print(currentPosition);
+  // Serial.print(",");
   // Serial.print(minPosition);
   // Serial.print(",");
   // Serial.print(maxPosition);
