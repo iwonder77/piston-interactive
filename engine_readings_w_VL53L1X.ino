@@ -374,13 +374,13 @@ void calculateEngineParameters() {
 
 // ========== LED UPDATE FUNCTION ==========
 void updateLEDs() {
-  // Scale torque and HP to 0–255 for PWM
-  int torquePWM = (int)(255.0 * torque / MAX_DISPLAY_TORQUE);
-  int hpPWM = (int)(255.0 * horsepower / MAX_DISPLAY_HP);
+  // map torque and HP values to 0–255 for PWM
+  int torquePWM = map(torque, 0, MAX_DISPLAY_TORQUE, 0, 255);
+  int hpPWM = map(horsepower, 0, MAX_DISPLAY_HP, 0, 255);
 
   // clamp values to not go above or below optimal PWM strength
-  torquePWM = constrain(torquePWM, 0, 255);
-  hpPWM = constrain(hpPWM, 0, 255);
+  torquePWM = constrain(torquePWM, 20, 255);
+  hpPWM = constrain(hpPWM, 20, 255);
 
   Serial.print(torquePWM);
   Serial.print(",");
