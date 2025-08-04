@@ -11,6 +11,9 @@
 *   - Sensor config might be different, was playing around with it for a while
 *   - Motion detection logic
 *   - Enhanced min/max readings to better calculate crankshaft throw
+*   - Upgraded running average objects' use
+*   - Implemented hysteresis
+*   - PWM signal sent from main ESP32 to QuinLED Dig Uno LED Drivers
 * Date: 7-12-25
 * Board Used: ESP32-DevkitC-V4
 * Libraries:
@@ -63,6 +66,8 @@ const float MAX_DISPLAY_HP = 110.0;      // maximum HP for display scaling
 // LED PWM pin configuration values
 const int TORQUE_LED_PIN = 18;
 const int HP_LED_PIN = 19;
+const int PWM_FREQ = 5000;     // 5kHz PWM frequency
+const int PWM_RESOLUTION = 8;  // 8-bit resolution (0-255)
 
 // constants for RunningAverage objects (see below)
 const int SAMPLE_WINDOW_SIZE = 10;   // number of samples to average for smoothing raw readings
@@ -122,8 +127,12 @@ void setup() {
   pinMode(TORQUE_LED_PIN, OUTPUT);
   pinMode(HP_LED_PIN, OUTPUT);
 
-  analogWrite(TORQUE_LED_PIN, 0);
-  analogWrite(HP_LED_PIN, 0);
+  bool torqueSuccess = ledcAttach(TORQUE_LED_PIN, PWM_FREQ, PWM_RESOLUTION);
+  bool hpSuccess = ledcAttach(HP_LED_PIN, PWM_FREQ, PWM_RESOLUTION);
+  if (!torqueSuccess && !hpSuccess) {
+    Serial.println("ERROR: failed to attach PWM to pin");
+    while (1);
+  }
 
   sensor.setTimeout(500);
   if (!sensor.init()) {
@@ -170,10 +179,9 @@ void loop() {
       calculateEngineParameters();
       updateLEDs();
 
-      //outputData();
+      outputData();
     }
   }
-  // small delay to prevent overwhelming system
   delay(10);
 }
 
@@ -382,14 +390,9 @@ void updateLEDs() {
   torquePWM = constrain(torquePWM, 20, 255);
   hpPWM = constrain(hpPWM, 20, 255);
 
-  Serial.print(torquePWM);
-  Serial.print(",");
-  Serial.print(hpPWM);
-  Serial.println();
-
   // Send to PWM pins
-  analogWrite(TORQUE_LED_PIN, torquePWM);
-  analogWrite(HP_LED_PIN, hpPWM);
+  ledcWrite(TORQUE_LED_PIN, torquePWM);
+  ledcWrite(HP_LED_PIN, hpPWM);
 }
 
 // ========== MOTION TIMEOUT CHECKING ==========
