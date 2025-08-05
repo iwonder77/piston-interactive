@@ -56,12 +56,12 @@ const float MAX_REASONABLE_THROW = 150.0;    // maximum detected throw that make
 const int MIN_SAMPLES_FOR_VALID_THROW = 20;  // we need this many samples before throw is considered valid
 
 // engine calculation settings
-const float PISTON_AREA = 50.0;          // WARNING: fixed piston head area, must be different for each installation
-const float PRESSURE_MULTIPLIER = 0.5;   // simplified pressure factor
-const float TORQUE_SCALE_FACTOR = 0.2;   // scale torque for reasonable LED range
-const float MAX_DISPLAY_RPM = 200.0;     // maximum rpm for display scaling
-const float MAX_DISPLAY_TORQUE = 700.0;  // maximum torque for display scaling
-const float MAX_DISPLAY_HP = 110.0;      // maximum HP for display scaling
+const float PISTON_AREA = 50.0;           // WARNING: fixed piston head area, must be different for each installation
+const float PRESSURE_MULTIPLIER = 0.5;    // simplified pressure factor
+const float TORQUE_SCALE_FACTOR = 0.2;    // scale torque for reasonable LED range
+const float MAX_DISPLAY_RPM = 200.0;      // maximum rpm for display scaling
+const float MAX_DISPLAY_TORQUE = 1200.0;  // maximum torque for display scaling
+const float MAX_DISPLAY_HP = 200.0;       // maximum HP for display scaling
 
 // LED PWM pin configuration values
 const int TORQUE_LED_PIN = 18;
@@ -378,6 +378,10 @@ void calculateEngineParameters() {
   // constrain values to reasonable display ranges
   torque = constrain(torque, 0, MAX_DISPLAY_TORQUE);
   horsepower = constrain(horsepower, 0, MAX_DISPLAY_HP);
+  Serial.print(torque);
+  Serial.print(",");
+  Serial.print(horsepower);
+  Serial.print(",");
 }
 
 // ========== LED UPDATE FUNCTION ==========
@@ -512,8 +516,8 @@ void outputData() {
   // Serial.print(",");
   // Serial.print(maxPosition);
   // Serial.print(",");
-  // Serial.print(crankshaftThrow);
-  // Serial.print(",");
+  Serial.print(crankshaftThrow);
+  Serial.print(",");
   // engine parameters
   Serial.print(rpm);
   Serial.print(",");
