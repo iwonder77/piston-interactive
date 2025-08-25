@@ -3,8 +3,8 @@
 * PROJECT NAME: engine_readings_w_VL53L1X
 * Description: testing M5Stack's ToF sensor which will be used in the piston interactive
 * 
-* Original Author: Mike Heaton
-* Modified by: Isai Sanchez
+* Author: Isai Sanchez
+* Contributions: Mike Heaton
 * Changes:
 *   - More comments, variable renaming and function creation
 *   - Error Handling for readings and calculations
