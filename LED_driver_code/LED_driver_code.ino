@@ -153,14 +153,15 @@ void loop() {
       int targetLEDs = map(smoothedDutyCycle, 0, 100, 0, NUM_LEDS - 1);
       targetLEDs = constrain(targetLEDs, 0, NUM_LEDS - 1);
 
-      // Check if potentiometer changed significantly
+      // check if target LEDs changed significantly
       if (abs(targetLEDs - currentTargetLEDs) >= LED_HYSTERESIS_THRESHOLD) {
         currentTargetLEDs = targetLEDs;
         lastActivityTime = millis();  // Reset idle timer
       }
     }
   }
-  // Always update display (either normal or with idle animation)
+  // always update display (either normal or with idle animation)
   updateDisplay();
-  delay(10);  // Smooth animation timing
+
+  delay(2);
 }
