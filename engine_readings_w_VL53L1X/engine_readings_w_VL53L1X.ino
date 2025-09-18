@@ -49,26 +49,25 @@ constexpr float MIN_VALID_MM = 40.0f;    // 4 cm (lowest reading recommended fro
 constexpr float MAX_VALID_MM = 4000.0f;  // 4 m
 
 // motion detection / windows
-constexpr float MIN_MOTION_DELTA_MM = 2.0f;      // minimum change in position to detect motion (mm)
+constexpr float MIN_MOTION_DELTA_MM = 1.0f;      // minimum change in position to detect motion (mm)
 constexpr uint32_t MOTION_TIMEOUT_MS = 3000;     // reset tracking after this many ms of no motion
-const float MIN_REASONABLE_THROW = 3.0;          // minimum detected throw that makes sense (mm)
+const float MIN_REASONABLE_THROW = 2.0;          // minimum detected throw that makes sense (mm)
 const float MAX_REASONABLE_THROW = 150.0;        // maximum detected throw that makes sense (mm)
-constexpr float MIN_THROW_FOR_MOTION_MM = 5.0f;  // minimum throw to consider system "in motion" (mm)
+constexpr float MIN_THROW_FOR_MOTION_MM = 2.0f;  // minimum throw to consider system "in motion" (mm)
 constexpr float MIN_MAX_HYST_MM = 1.0f;          // must exceed previous min/max by this amount to update
 constexpr uint16_t PEAK_RING_SIZE = 64;          // ring buffer for min/max window
 
 // engine model
-// WARNING: fixed piston head area, must be different for each installation
-constexpr float PISTON_AREA_CM2 = 50.0f;
-constexpr float PRESSURE_MULTIPLIER = 0.5f;  // simplification factor
-constexpr float TORQUE_SCALE_FACTOR = 0.2f;  // scale torque for reasonable LED range
+constexpr float PISTON_AREA_CM2 = 50.0f;  // WARNING: fixed piston head area, must be different for each installation
 constexpr float MAX_DISPLAY_RPM = 200.0f;
 constexpr float MAX_DISPLAY_TORQUE = 1200.0f;
 constexpr float MAX_DISPLAY_HP = 200.0f;
+constexpr float PRESSURE_MULTIPLIER = 0.5f;  // simplification factor
+constexpr float TORQUE_SCALE_FACTOR = 0.2f;  // scale torque for reasonable LED range
 
 // EMA filters (0..1). Smaller = heavier smoothing
-constexpr float EMA_POS_ALPHA = 0.25f;  // position smoothing
-constexpr float EMA_RPM_ALPHA = 0.3f;   // rpm smoothing
+constexpr float EMA_POS_ALPHA = 0.4f;  // position smoothing
+constexpr float EMA_RPM_ALPHA = 0.3f;  // rpm smoothing
 
 // LEDC (PWM)
 constexpr int TORQUE_LED_PIN = 18;
