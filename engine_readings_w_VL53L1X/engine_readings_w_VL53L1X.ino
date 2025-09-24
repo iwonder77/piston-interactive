@@ -1,33 +1,35 @@
 /* 
 * ----------------------------------------------
-* PROJECT NAME: engine_readings_w_VL53L1X
-* Description: testing M5Stack's ToF sensor which will be used in the piston interactive
+* PROJECT NAME: Piston Interactive
+* File Name: engine_readings_w_VL53L1X.ino
+* Description: full implementation of engine reading logic with M5Stack's ToF sensor which will be used in the piston interactive
 * 
 * Author: Isai Sanchez
-* Contributions: Mike Heaton
+* Original contributions: Mike Heaton
 * Changes:
-*   - More comments, variable renaming and function creation
-*   - Error Handling for readings and calculations
+*   - More comments, variable renaming and class creation
+*   - Error handling for readings and calculations
 *   - Sensor config might be different, was playing around with it for a while
 *   - Motion detection logic
-*   - Enhanced min/max readings to better calculate crankshaft throw
-*   - Upgraded running average objects' use
+*   - Enhanced min/max readings with ring window to better calculate crankshaft throw
 *   - Implemented hysteresis
-*   - PWM signal sent from main ESP32 to QuinLED Dig Uno LED Drivers
+*   - PWM signal sent from main ESP32 to QuinLED Dig Uno LED Drivers corresponding to 
+*     torque and hp calculations
 * Date: 7-12-25
 * Board Used: ESP32-DevkitC-V4
 * Libraries:
 *   - Wire.h: https://docs.arduino.cc/language-reference/en/functions/communication/wire/
 *       -- I2C communication
 *   - VL53L1X.h: https://github.com/pololu/vl53l1x-arduino
-*       -- sensor driver library for the ToF sensor we are using 
-*   - RunningAverage.h: https://github.com/RobTillaart/RunningAverage
-*       -- circular buffer library used to smoothen out sample readings
+*       -- Polulu's sensor driver library for the ToF sensor
 * Notes:
-*   - the sensors region of interest (ROI) was modified to allow a smaller field of view (FoV) at 
+*   - if I could split these classes up into their own files I would, but the arduino-cli was getting
+*     mad at me when I tried to compile them, something about the build process with the esp32 that I've got to figure out
+*   - the ToF sensor's region of interest (ROI) was modified to allow a smaller field of view (FoV) at 
 *     the cost of losing sensitivity
-*   - circular buffer is a data structure that behaves like a fixed-size buffer that wraps around itself,
-*     when the buffer is full and a new element is to be added, it overwrites the oldest element
+*   - ring window is just a circular buffer, i.e. a data structure that behaves like a fixed-size 
+*     buffer that wraps around itself, when the buffer is full and a new element is to be added, 
+*     it overwrites the oldest element
 * ----------------------------------------------
 */
 
@@ -155,7 +157,7 @@ public:
     if (!tof.init()) return false;                          // ensure init
     tof.setROISize(cfg::ROI_W, cfg::ROI_H);                 // set the region of interest (ROI) to 6x6 pixels (smaller ROI = narrower FoV = better accuracy, less noise)
     tof.setROICenter(cfg::ROI_CENTER);                      // set the center of the sensor's ROI
-    tof.setDistanceMode(VL53L1X::Short);                    // set the distance mode to short (available are Short, Medium, Long)
+    tof.setDistanceMode(VL53L1X::Medium);                   // set the distance mode to short (available are Short, Medium, Long)
     tof.setMeasurementTimingBudget(cfg::TIMING_BUDGET_US);  // measurement timing budget
     tof.startContinuous(cfg::INTER_MEAS_MS);                // the specified inter-measurement period in milliseconds determines how often the sensor takes a measurement
     return true;
