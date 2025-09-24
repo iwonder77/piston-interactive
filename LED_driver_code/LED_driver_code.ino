@@ -76,7 +76,7 @@ void updateDisplay() {
 
   if (isIdling && currentTargetLEDs > 0) {
     // Create breathing/wave effect during idle
-    wavePhase += 0.05;  // Speed of breathing animation
+    wavePhase += 0.01;  // Speed of breathing animation
     if (wavePhase > TWO_PI) wavePhase = 0;
 
     // Create wave that oscillates ±25% around the target
@@ -126,7 +126,7 @@ void updateDisplay() {
 void setup() {
   Serial.begin(115200);
   pinMode(PWM_INPUT_PIN, INPUT_PULLUP);
-  FastLED.addLeds<WS2815, LED_DATA_PIN, RGB>(leds, NUM_LEDS);
+  FastLED.addLeds<WS2815, LED_DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(255 * LED_BRIGHTNESS / 100);
 
   dutyCycleFilter.clear();
@@ -134,7 +134,7 @@ void setup() {
 
   attachInterrupt(digitalPinToInterrupt(PWM_INPUT_PIN), pwmInterrupt, CHANGE);
 
-  currentTargetLEDs = 10;
+  currentTargetLEDs = 20;
 }
 
 void loop() {
