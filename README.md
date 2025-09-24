@@ -1,27 +1,16 @@
-# VL53L1X Sensor + ESP32 Project
+# Piston Interactive
 
-## Overview
-This document provides a comprehensive breakdown of the original Arduino sketch flow for the Piston Interactive system, from initialization through continuous operation.
+## Project Overview
+This document provides a comprehensive breakdown of the Arduino sketch flow for the Piston Interactive system, including the main ESP32 code for sensor readings and engine parameter calculations, and the QuinLED driver code for LED bar visualization.
+
+## Hardware Components
+- Microcontroller: ESP32-DevKitC-V4
+- ToF Sensor: M5Stack's VL53L1X ToF Distance Unit. Found [here](https://shop.m5stack.com/products/time-of-flight-distance-unit-vl53l1x?srsltid=AfmBOoprDGgPCZlY4ets509p4m7cXj-nKKdMHRDG5hY20O5jZdbu7gsj)
 
 ---
 
-## 1. SYSTEM INITIALIZATION PHASE
 
-### 1.1 Hardware Setup
-```cpp
-void setup() {
-    Serial.begin(115200);          // Initialize serial communication
-    Wire.begin();                  // Initialize I2C for ToF sensor
-}
-```
-
-### 1.2 LED PWM Configuration
-- **Pins**: Torque LED (Pin 18), HP LED (Pin 19)
-- **PWM Settings**: 5kHz frequency, 8-bit resolution (0-255)
-- **Error Handling**: System halts if PWM attachment fails
-- **Output**: Both LEDs initialized to OFF state
-
-### 1.3 ToF Sensor Initialization
+## ToF Sensor Initialization
 ```cpp
 sensor.setTimeout(500);
 if (!sensor.init()) {
