@@ -6,21 +6,16 @@ This document provides a comprehensive breakdown of the Arduino sketch flow for 
 ## Hardware Components
 - Microcontroller: ESP32-DevKitC-V4
 - ToF Sensor: M5Stack's VL53L1X ToF Distance Unit. Found [here](https://shop.m5stack.com/products/time-of-flight-distance-unit-vl53l1x?srsltid=AfmBOoprDGgPCZlY4ets509p4m7cXj-nKKdMHRDG5hY20O5jZdbu7gsj)
+- LED Drivers: 2 x QuinLED Dig Uno drivers
+- LED Strips: 10 x 12V WS2815 LED Strips
 
----
+## Software Architecture
 
+### `ToFSensor` Class
+Purpose: The interface for the VL53L1X sensor, measuring piston head position
 
-## ToF Sensor Initialization
-```cpp
-sensor.setTimeout(500);
-if (!sensor.init()) {
-    systemHealthy = false;         // Mark system as unhealthy
-} else {
-    configureSensor();             // Apply sensor configuration
-}
-```
-
-**Sensor Configuration Applied:**
+Key Methods:
+1. `configure()`: sensor initialization
 - ROI Size: 6x6 pixels (narrower field of view for accuracy)
 - ROI Center: 199 (sensor center point)
 - Distance Mode: Short (4cm to 130cm range)
