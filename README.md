@@ -15,23 +15,19 @@ This document provides a comprehensive breakdown of the Arduino sketch flow for 
 Purpose: The interface for the VL53L1X sensor, measuring piston head position
 
 Key Methods:
-1. `configure()`: sensor initialization
-- ROI Size: 6x6 pixels (narrower field of view for accuracy)
-- ROI Center: 199 (sensor center point)
-- Distance Mode: Short (4cm to 130cm range)
-- Timing Budget: 15ms per measurement
-- Continuous Mode: 5ms intervals
+1. `configure()`: sensor initialization with ROI and timing settings (see [Polulu's](https://github.com/pololu/vl53l1x-arduino) library for this sensor for more information on config settings)
+2. `read()`: position reading with EMA smoothing filter
+3. `ready()`: non-blocking data availability check
 
-### 1.4 Filter Initialization
-- **Sample Filter**: 10-sample window for noise reduction
-- **Min/Max Window**: 50-sample window for extremum tracking  
-- **RPM Filter**: 10-sample window for RPM smoothing
-- All filters cleared to start with clean state
+Features: built-in timeout handling, validity range checking, exponential moving average filter for raw position filtering
 
-### 1.5 Motion System Initialization
-```cpp
-lastMotionTime = millis();         // Initialize motion timeout tracking
-```
+
+### `MotionTracker` Class
+Purpose: motion detection and RPM calculation from position data (zero-cross detection)
+
+Key Methods:
+1. `update()`: motion detection, throw calculation, zero-crossing detection logic, and motion timeout reset (more on these below)
+2. `decayRPM()`: RPM decaying function when motion of crankshaft stops to simulate engine slowing down
 
 ---
 
