@@ -36,7 +36,7 @@ Key Methods:
 2. `decayRPM()`: RPM decaying function when motion of crankshaft stops to simulate engine slowing down
 
 Key Features:
-    - Motion Detection: simple calculation of change in position, only move forward if the absolute value of this change is greater than a set value
+- Motion Detection: simple calculation of change in position, only move forward if the absolute value of this change is greater than a set value
 ```cpp
     float d = fabsf(pos - lastPos);
 
