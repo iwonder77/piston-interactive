@@ -56,10 +56,9 @@ constexpr uint32_t MOTION_TIMEOUT_MS = 3000;       // reset tracking after this 
 constexpr float MIN_REASONABLE_THROW = 2.0f;       // minimum detected throw that makes sense (mm)
 constexpr float MAX_REASONABLE_THROW = 150.0f;     // maximum detected throw that makes sense (mm)
 constexpr float MIN_THROW_FOR_MOTION_MM = 2.0f;    // minimum throw to consider system "in motion" (mm)
-constexpr float MIN_MAX_HYST_MM = 1.0f;            // must exceed previous min/max by this amount to update
+constexpr float MIN_MAX_HYST_MM = 2.0f;            // must exceed previous min/max by this amount (+ or -) to update
 constexpr uint16_t PEAK_MIN_MAX_WINDOW_SIZE = 64;  // max ring buffer size for min/max window
 constexpr uint16_t PEAK_PERIOD_WINDOW_SIZE = 6;    // max ring buffer size for period count window
-constexpr float INIT_SEED_RPM = 10.0f;             // early feedback RPM before first full cycle
 
 // engine model
 constexpr float PISTON_AREA_CM2 = 50.0f;  // WARNING: fixed piston head area, must be different for each installation
@@ -80,6 +79,9 @@ constexpr int HP_LED_PIN = 19;
 constexpr uint32_t PWM_FREQ_HZ = 5000;  // 5kHz PWM frequency
 constexpr uint8_t PWM_RES_BITS = 8;     // 8-bit resolution (0...255)
 constexpr int PWM_MIN_DUTY = 20;        // allow small readings for torque and hp to pass through
+constexpr int SMALL_PISTON_MAX_DUTY = 190;
+constexpr int MEDIUM_PISTON_MAX_DUTY = 220;
+constexpr int LARGE_PISTON_MAX_DUTY = 255;
 //
 // error handling
 constexpr uint8_t MAX_SENSOR_ERRORS = 5;
@@ -246,8 +248,8 @@ public:
       float wMax = window.max();
       float wMin = window.min();
       // hysteretic min/max updates
-      if (!isnan(wMax) && wMax > maxPos + cfg::MIN_MAX_HYST_MM) { maxPos = wMax; }
-      if (!isnan(wMin) && wMin < minPos - cfg::MIN_MAX_HYST_MM) { minPos = wMin; }
+      if (!isnan(wMax) && fabs(wMax - maxPos) > cfg::MIN_MAX_HYST_MM) { maxPos = wMax; }
+      if (!isnan(wMin) && fabs(wMin - minPos) > cfg::MIN_MAX_HYST_MM) { minPos = wMin; }
 
       // throw (radius) ~ (max-min)/2
       float rawThrow = (maxPos - minPos) * 0.5f;
@@ -406,9 +408,8 @@ public:
   }
 
   void show(float torque, float hp) {
-    uint32_t maxDuty = (1u << cfg::PWM_RES_BITS) - 1u;  // 255
-    int t = mapFloatToDuty(torque, cfg::MAX_DISPLAY_TORQUE, cfg::PWM_MIN_DUTY, maxDuty);
-    int h = mapFloatToDuty(hp, cfg::MAX_DISPLAY_HP, cfg::PWM_MIN_DUTY, maxDuty);
+    int t = mapFloatToDuty(torque, cfg::MAX_DISPLAY_TORQUE, cfg::PWM_MIN_DUTY, cfg::MEDIUM_PISTON_MAX_DUTY);
+    int h = mapFloatToDuty(hp, cfg::MAX_DISPLAY_HP, cfg::PWM_MIN_DUTY, cfg::MEDIUM_PISTON_MAX_DUTY);
     ledcWrite(cfg::TORQUE_LED_PIN, t);
     ledcWrite(cfg::HP_LED_PIN, h);
   }
