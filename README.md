@@ -36,12 +36,14 @@ Key Methods:
 2. `decayRPM()`: RPM decaying function when motion of crankshaft stops to simulate engine slowing down
 
 Key Features:
-- Motion Detection: simple calculation of change in position, only move forward if the absolute value of this change is greater than a set value
+- Motion Detection: simple calculation of change in position, only move forward if the absolute value of this change is greater than a pre-specified constant
 ```cpp
     float d = fabsf(pos - lastPos);
 
     if (d > cfg::MIN_MOTION_DELTA_MM) {...}
 ```
+- Crankshaft Throw Calculation: once ring window for min/max are updated, the throw is just (min-max)/2, if this calculated throw passes some validity checks, we update crankshaftThrow and set the throwValid flag to move on to center crossing
+- Center Crossing RPM calculation: this is the fun part, 
 
 ### Serial Output Format
 ```
