@@ -92,8 +92,7 @@ static inline float clampf(float x, float lo, float hi) {
                                   : x;
 }
 
-// lightweight ring buffer helper for the min/max window
-// holds the last N samples and gives us min or max of that recent window
+// lightweight ring buffer helper
 class RingWindow {
 public:
   explicit RingWindow(size_t cap) : cap_(cap), buf_(new float[cap]), filled_(0), head_(0) {
@@ -232,8 +231,8 @@ public:
   }
 
   void update(float pos) {
-    float d = fabsf(pos - lastPos);
     uint32_t now = millis();
+    float d = fabsf(pos - lastPos);
 
     if (d > cfg::MIN_MOTION_DELTA_MM) {
       if (!moving) {
