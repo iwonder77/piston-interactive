@@ -44,6 +44,7 @@ Key Features:
 ```
 - Crankshaft Throw Calculation: once ring window for min/max are updated, the throw is just (min-max)/2, if this calculated throw passes some validity checks, we update crankshaftThrow and set the throwValid flag to move on to center crossing
 - Center Crossing RPM calculation: this is the fun part, 
+![center crossing visualization](./center-crossing.png)
 
 ### Serial Output Format
 ```
