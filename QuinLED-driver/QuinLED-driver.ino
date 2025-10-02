@@ -126,7 +126,7 @@ void updateDisplay() {
 void setup() {
   Serial.begin(115200);
   pinMode(PWM_INPUT_PIN, INPUT_PULLUP);
-  FastLED.addLeds<WS2815, LED_DATA_PIN, GRB>(leds, NUM_LEDS);
+  FastLED.addLeds<WS2815, LED_DATA_PIN, RGB>(leds, NUM_LEDS);
   FastLED.setBrightness(255 * LED_BRIGHTNESS / 100);
 
   dutyCycleFilter.clear();
