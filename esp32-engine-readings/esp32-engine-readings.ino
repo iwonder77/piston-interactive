@@ -5,7 +5,7 @@
 * Description: full implementation of engine reading logic with M5Stack's ToF sensor which will be used in the piston interactive
 * 
 * Author: Isai Sanchez
-* Original contributions: Mike Heaton
+* Original Contributions: Mike Heaton
 * Changes:
 *   - More comments, variable renaming and class creation
 *   - Error handling for readings and calculations
@@ -61,7 +61,14 @@ constexpr uint16_t PEAK_MIN_MAX_WINDOW_SIZE = 64;  // max ring buffer size for m
 constexpr uint16_t PEAK_PERIOD_WINDOW_SIZE = 6;    // max ring buffer size for period count window
 
 // engine model
-constexpr float PISTON_AREA_CM2 = 50.0f;  // WARNING: fixed piston head area, must be different for each installation
+enum class PistonSize : uint8_t { SMALL,
+                                  MEDIUM,
+                                  LARGE };
+// NOTE: piston size display type must be different for each installation and manually changed here
+// a little tedious to manually change and reflash, maybe in the future we could
+// use dip switches for the 3 piston sizes
+constexpr PistonSize DISPLAY_TYPE = PistonSize::SMALL;
+constexpr float PISTON_AREA_CM2 = 50.0f;
 constexpr float MIN_DETECTED_RPM = 2.0f;
 constexpr float MAX_DETECTED_RPM = 200.0f;
 constexpr float MAX_DISPLAY_TORQUE = 1200.0f;
@@ -79,10 +86,13 @@ constexpr int HP_LED_PIN = 19;
 constexpr uint32_t PWM_FREQ_HZ = 5000;  // 5kHz PWM frequency
 constexpr uint8_t PWM_RES_BITS = 8;     // 8-bit resolution (0...255)
 constexpr int PWM_MIN_DUTY = 20;        // allow small readings for torque and hp to pass through
+// NOTE: although changing the max duty cycle for torque and horsepower pwm signals across displays
+// is not technically accurate, the educational impact of seeing changes in LED bar height across
+// displays is higher
 constexpr int SMALL_PISTON_MAX_DUTY = 190;
 constexpr int MEDIUM_PISTON_MAX_DUTY = 220;
 constexpr int LARGE_PISTON_MAX_DUTY = 255;
-//
+
 // error handling
 constexpr uint8_t MAX_SENSOR_ERRORS = 5;
 constexpr uint32_t ERROR_RECOVERY_PERIOD = 5000;
@@ -94,7 +104,7 @@ static inline float clampf(float x, float lo, float hi) {
                                   : x;
 }
 
-// lightweight ring buffer helper
+// lightweight ring buffer helper class
 class RingWindow {
 public:
   explicit RingWindow(size_t cap) : cap_(cap), buf_(new float[cap]), filled_(0), head_(0) {
@@ -408,20 +418,33 @@ public:
   }
 
   void show(float torque, float hp) {
-    int t = mapFloatToDuty(torque, cfg::MAX_DISPLAY_TORQUE, cfg::PWM_MIN_DUTY, cfg::MEDIUM_PISTON_MAX_DUTY);
-    int h = mapFloatToDuty(hp, cfg::MAX_DISPLAY_HP, cfg::PWM_MIN_DUTY, cfg::MEDIUM_PISTON_MAX_DUTY);
+    int t = mapFloatToDuty(torque, cfg::MAX_DISPLAY_TORQUE);
+    int h = mapFloatToDuty(hp, cfg::MAX_DISPLAY_HP);
     ledcWrite(cfg::TORQUE_LED_PIN, t);
     ledcWrite(cfg::HP_LED_PIN, h);
   }
 
 private:
-  static int mapFloatToDuty(float v, float vmax, uint32_t minDuty, uint32_t maxDuty) {
+  static int mapFloatToDuty(float v, float vmax) {
     v = clampf(v, 0.0f, vmax);
     if (v <= 0.0f) return 0;
 
-    // Map 0..vmax → PWM_MIN_DUTY..maxDuty
-    int duty = int((v / vmax) * float(maxDuty - cfg::PWM_MIN_DUTY) + cfg::PWM_MIN_DUTY + 0.5f);
+    // Map 0..vmax → minDuty..maxDuty
+    // but ensure max duty for PWM is display-specific based on piston size
+    uint32_t effectiveMax;
+    switch (cfg::DISPLAY_TYPE) {
+      case cfg::PistonSize::SMALL:
+        effectiveMax = cfg::SMALL_PISTON_MAX_DUTY;
+        break;
+      case cfg::PistonSize::MEDIUM:
+        effectiveMax = cfg::MEDIUM_PISTON_MAX_DUTY;
+        break;
+      case cfg::PistonSize::LARGE:
+        effectiveMax = cfg::LARGE_PISTON_MAX_DUTY;
+        break;
+    }
 
+    int duty = int((v / vmax) * float(effectiveMax - cfg::PWM_MIN_DUTY) + cfg::PWM_MIN_DUTY + 0.5f);
     return duty;
   }
 };
@@ -598,3 +621,15 @@ void loop() {
   app.loopOnce();
   delay(2);  // light pacing, sensor runs in continuous mode
 }
+
+  
+  
+  
+    
+    
+  
+    
+    
+  
+    
+    
