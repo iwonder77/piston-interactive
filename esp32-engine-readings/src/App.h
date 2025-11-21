@@ -1,6 +1,5 @@
 #include <Arduino.h>
 
-#include "Config.h"
 #include "EngineModel.h"
 #include "Health.h"
 #include "LedOutput.h"
