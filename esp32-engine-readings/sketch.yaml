@@ -1,3 +1,0 @@
-board: arduino:avr:uno
-default_fqbn: esp32:esp32:esp32
-default_port: /dev/cu.usbserial-0001
