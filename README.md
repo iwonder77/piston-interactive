@@ -1,10 +1,10 @@
 # Piston Interactive
 
-## Project Overview
+## Overview
 
-This document provides a comprehensive breakdown of the Arduino sketch flow for the Piston Interactive system, including the main ESP32 code for sensor readings and engine parameter calculations, and the QuinLED driver code for LED bar visualization.
+Source code for the piston interactive at Kidopolis, designed to teach children how different engine components work together. The exhibit features a crankshaft with adjustable throw, interchangeable connecting rods of varying lengths, and fixed piston heads on display with varying widths (representing different surface areas). By choosing a crankshaft throw, connecting rod, and piston head, visitors can manually rotate the crankshaft and create the oscillating piston motion. Two LED bar graphs beside the interactive display the torque and horsepower readings in real time, based on the selected components and measured RPM. A single ToF distance sensor paired with an ESP32 detects motion, computes RPMs using a center crossing algorithm, and calculates simplified torque and horsepower readings. These values are read by the QuinLED drivers and displayed on the two LED graphs accordingly.
 
-## Hardware Components
+## Hardware
 
 - Microcontroller: ESP32-DevKitC-V4
 - ToF Sensor: M5Stack's VL53L1X ToF Distance Unit. Found [here](https://shop.m5stack.com/products/time-of-flight-distance-unit-vl53l1x?srsltid=AfmBOoprDGgPCZlY4ets509p4m7cXj-nKKdMHRDG5hY20O5jZdbu7gsj)
@@ -15,7 +15,7 @@ This document provides a comprehensive breakdown of the Arduino sketch flow for 
 
 ### Overview
 
-The esp32's sketch handles proper ToF sensor data acquisition and filtering, motion tracking logic, engine parameter calculations (rpms, torque, and horsepower), and creates corresponding PWM signal for the QuinLED driver board. Below is an overview of each class in the sketch and the role it plays in this project. I haven't figured out how to split these files into their respective .h and .cpp files without the Arduino to ESP32 build process getting angry at me, so if you have advice let me know!
+The main esp32's source code contains classes that handle proper ToF sensor data acquisition and filtering, motion tracking logic, engine parameter calculations (rpms, torque, and horsepower), and create corresponding PWM signal for the QuinLED driver board. Below is an overview of each class in the sketch and the role it plays in this project.
 
 ### `RingWindow` class
 
@@ -45,21 +45,7 @@ Key Methods:
 
 Key Features:
 
-- Motion Detection: simple calculation of change in position, only move forward if the absolute value of this change is greater than a pre-specified constant
-
-```cpp
-    float d = fabsf(pos - lastPos);
-
-    if (d > cfg::MIN_MOTION_DELTA_MM) {...}
-```
-
-- Crankshaft Throw Calculation: once ring window for min/max are updated, the throw is just (min-max)/2, if this calculated throw passes some validity checks, we update crankshaftThrow and set the throwValid flag to move on to center crossing
-- Center Crossing RPM calculation: this is the fun part,
+- **Motion Detection**: Simple calculation of change in position `d`, only move forward if the absolute value of this change is greater than a pre-specified constant `d > config::MIN_MOTION_DELTA_MM`
+- **Crankshaft Throw Calculation**: Once the ring windows for min/max are updated, the throw is just (min-max)/2, if this calculated throw passes some validity checks, we update crankshaftThrow and set the throwValid flag to move on to center crossing
+- **Center Crossing RPM calculation**: This is the fun part, the filtered distance readings form a clean-ish oscillating wave as the piston moves (drawn below). By taking the midpoint between the minimum and maximum readings, calculated with (min + max)/2, we establish a logical "center" of the pistons travvel. This center value acts as a checkpoint that tells us when the piston crosses from one side of its motion to the other. A small state machine, using the `Edge` enum (`ABOVE`, `BELOW`, `UNKNOWN`) tracks whether the current reading is above or below that threshold. Adding some hysteresis to these position vs. center checks prevents rapid flickering between states and results in more stable transitions. A timestamp is created whenever a center crossing event occurs (when we transition from `ABOVE` to `BELOW` or vice versa), so that on the next crossing event we compare the current time (latest transition) to the previous crossing event timestamp, to obtain the **half-period** of the oscillation. Using that half period, the RPMs are calculated with: `rpm = 60,000 / (half_period) * 2`. Adding this to a ring window yields a simple but reliable RPM estimate from a single sensor!
   ![center crossing visualization](./docs/center-crossing.png)
-
-### Serial Output Format
-
-```
-CSV Header: "Position,Min,Max,Throw,RPM,Torque,HP"
-Data Line:  "crankshaftThrow,rpm,torque,horsepower"
-```
