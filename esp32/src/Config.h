@@ -41,6 +41,15 @@ constexpr uint16_t PEAK_MIN_MAX_WINDOW_SIZE =
 constexpr uint16_t PEAK_PERIOD_WINDOW_SIZE =
     6; // max ring buffer size for period count window
 
+// --- CENTER-CROSSING CONSTANTS ---
+constexpr uint32_t MIN_HALF_CYCLE_MS = 10;    // minimum realistic half-cycle
+constexpr uint32_t MAX_HALF_CYCLE_MS = 10000; // maximum realistic half-cycle
+
+// --- DECAY RPMS CONSTANTS ---
+constexpr uint32_t RPM_DECAY_TIMEOUT_MS = 500; // start decay after 0.5s
+constexpr float RPM_DECAY_FACTOR = 0.99f;      // decay multiplier
+constexpr float RPM_DECAY_MIN = 10.0f;         // zero out below this
+
 // --- ENGINE MODEL ---
 enum class PistonSize : uint8_t { SMALL, MEDIUM, LARGE };
 // NOTE: piston size display type must be different for each installation and
@@ -79,7 +88,7 @@ constexpr int LARGE_PISTON_MAX_DUTY = 255;
 constexpr uint8_t MAX_SENSOR_ERRORS = 5;
 constexpr uint32_t ERROR_RECOVERY_PERIOD = 5000;
 
-// --- UTILITY FUNCITON ---
+// --- UTILITY FUNCTION ---
 static inline float clampf(float x, float lo, float hi) {
   return (x < lo) ? lo : (x > hi) ? hi : x;
 }
