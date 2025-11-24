@@ -2,31 +2,28 @@
 /**
  * Config.h
  *
- * Centralized configuration constants used by the esp32 sketch
- *
- * - make sure to `#include "Config.h"` then use config::XXXXX throughout the
- * projects for no magic numbers
+ * Centralized configuration constants used by the esp32 sketch.
+ * - make sure to `#include "Config.h"` then use config::XXXXX
  * - units are encoded in the name (e.g. _MS, _US)
  */
 
 #include <Arduino.h>
 
 namespace config {
-// sensor
+// --- VL53L1X ---
 constexpr uint16_t SENSOR_TIMEOUT_MS = 500; // VL53L1X timeout
 constexpr uint8_t ROI_W = 6;                // 4..16 typical
 constexpr uint8_t ROI_H = 6;
-constexpr uint8_t ROI_CENTER =
-    199; // depends on module; 199 is common for M5Stack unit
+constexpr uint8_t ROI_CENTER = 199;
 constexpr uint16_t TIMING_BUDGET_US = 15000; // 15 ms budget
 constexpr uint16_t INTER_MEAS_MS = 5;        // continuous period
 
-// valid sensor reading window (mm)
+// --- SENSOR READING WINDOW ---
 constexpr float MIN_VALID_MM = 20.0f; // 4 cm is lowest reading recommended from
                                       // sensor docs, but let's stick with 2 cm
 constexpr float MAX_VALID_MM = 4000.0f; // 4 m
 
-// motion detection / windows
+// --- MOTION DETECTION WINDOWS ---
 constexpr float MIN_MOTION_DELTA_MM =
     3.0f; // minimum change in position to detect motion (mm)
 constexpr uint32_t MOTION_TIMEOUT_MS =
@@ -44,7 +41,7 @@ constexpr uint16_t PEAK_MIN_MAX_WINDOW_SIZE =
 constexpr uint16_t PEAK_PERIOD_WINDOW_SIZE =
     6; // max ring buffer size for period count window
 
-// engine model
+// --- ENGINE MODEL ---
 enum class PistonSize : uint8_t { SMALL, MEDIUM, LARGE };
 // NOTE: piston size display type must be different for each installation and
 // manually changed here a little tedious to manually change and reflash, maybe
@@ -59,11 +56,12 @@ constexpr float PRESSURE_MULTIPLIER = 0.5f; // simplification factor
 constexpr float TORQUE_SCALE_FACTOR =
     0.2f; // scale torque for reasonable LED range
 
-// EMA filter constants (0...1) smaller = heavier smoothing
+// --- EMA FILTER ---
+// (0...1) smaller = heavier smoothing
 constexpr float EMA_POS_ALPHA = 0.4f; // position smoothing
 constexpr float EMA_RPM_ALPHA = 0.3f; // rpm smoothing
 
-// LEDC (PWM)
+// --- LEDC (PWM) ---
 constexpr int TORQUE_LED_PIN = 18;
 constexpr int HP_LED_PIN = 19;
 constexpr uint32_t PWM_FREQ_HZ = 5000; // 5kHz PWM frequency
@@ -72,16 +70,16 @@ constexpr int PWM_MIN_DUTY =
     20; // allow small readings for torque and hp to pass through
 // NOTE: although changing the max duty cycle for torque and horsepower pwm
 // signals across displays is not technically accurate, the educational impact
-// of seeing changes in LED bar height across displays is higher
+// of seeing changes in LED bar height across displays is much higher
 constexpr int SMALL_PISTON_MAX_DUTY = 190;
 constexpr int MEDIUM_PISTON_MAX_DUTY = 220;
 constexpr int LARGE_PISTON_MAX_DUTY = 255;
 
-// error handling
+// --- ERROR HANDLING ---
 constexpr uint8_t MAX_SENSOR_ERRORS = 5;
 constexpr uint32_t ERROR_RECOVERY_PERIOD = 5000;
 
-// util function
+// --- UTILITY FUNCITON ---
 static inline float clampf(float x, float lo, float hi) {
   return (x < lo) ? lo : (x > hi) ? hi : x;
 }
