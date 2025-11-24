@@ -1,6 +1,14 @@
+#pragma once
+/**
+ * Health.h
+ *
+ * A lightweight health monitoring/watchdog class
+ */
+
 #include <Arduino.h>
 
 #include "Config.h"
+
 // lighteweight WATCHDOG
 class Health {
 public:
@@ -32,4 +40,3 @@ private:
   bool unhealthy = false;
   uint32_t lastRecoveryTime = 0;
 };
-// ====================================================
