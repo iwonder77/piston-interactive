@@ -82,13 +82,13 @@ public:
 
     // insertion sort
     for (size_t i = 1; i < filled_; i++) {
-      size_t j = i - 1;
       T v = temp[i];
-      while (j > 0 && temp[j] > v) {
-        temp[j + 1] = temp[j];
+      size_t j = i;
+      while (j > 0 && temp[j - 1] > v) {
+        temp[j] = temp[j - 1];
         j--;
       }
-      temp[j + 1] = v;
+      temp[j] = v;
     }
 
     T result;
