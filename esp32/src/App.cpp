@@ -48,17 +48,18 @@ void App::loopOnce() {
 
 /**
  * @brief main method for coordination of all other classes
- * ensures sensor data is valid and updates tracker class with these readings
+ * ensures sensor data is valid/filtered, updates motion tracker with these
+ * readings, and computes engine parameters
  */
 void App::run() {
-  // temporary "scratchpad" for fresh position reading
+  // "scratchpad" for fresh position reading (is modified on every read)
   float pos;
   bool ok = false;
 
   // read sensor only if data is ready
   if (sensor.ready()) {
     ok = sensor.read(pos);
-    // notify watchdog of reading success/failure
+    // notify watchdog of reading success or failure
     if (!ok) {
       health.onBadRead();
     } else {
@@ -72,30 +73,28 @@ void App::run() {
     return;
   }
 
-  if (ok) {
-    // now that the position was read successfully, update motion + RPM
-    // estimator
-    tracker.update(pos);
-    tracker.decayRPM();
+  // now that the position was read successfully, update motion + RPM
+  // estimator with newly modified pos (filtered sensor reading)
+  tracker.update(pos);
+  tracker.decayRPM();
 
-    // compute outputs
-    EngineReadout r =
-        engine.compute(tracker.getCrankshaftThrowMM(), tracker.getRPMs());
-    led.show(r.torque, r.hp);
+  // compute outputs
+  EngineReadout r =
+      engine.compute(tracker.getCrankshaftThrowMM(), tracker.getRPMs());
+  led.show(r.torque, r.hp);
 
-    // CSV for Serial Plotter
-    DEBUG_PRINT(pos, 2);
-    DEBUG_PRINT(',');
-    DEBUG_PRINT(tracker.getCrankshaftThrowMM(), 2);
-    DEBUG_PRINT(',');
-    DEBUG_PRINT(r.rpm, 2);
-    DEBUG_PRINT(',');
-    DEBUG_PRINT(r.torque, 2);
-    DEBUG_PRINT(',');
-    DEBUG_PRINTLN(r.hp, 2);
+  // CSV for Serial Plotter
+  DEBUG_PRINT(pos, 2);
+  DEBUG_PRINT(',');
+  DEBUG_PRINT(tracker.getCrankshaftThrowMM(), 2);
+  DEBUG_PRINT(',');
+  DEBUG_PRINT(tracker.getRPMs(), 2);
+  DEBUG_PRINT(',');
+  DEBUG_PRINT(r.torque, 2);
+  DEBUG_PRINT(',');
+  DEBUG_PRINTLN(r.hp, 2);
 
-    state = tracker.isMoving() ? AppState::TRACKING : AppState::IDLE;
-  }
+  state = tracker.isMoving() ? AppState::TRACKING : AppState::IDLE;
 }
 
 /**
