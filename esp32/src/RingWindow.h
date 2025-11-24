@@ -1,31 +1,34 @@
+#pragma once
+/**
+ * RingWindow.h
+ *
+ * Lightweight circular buffer a.k.a. ring window class
+ */
+
 #include <Arduino.h>
 
-// =================================================
-// lightweight ring buffer class
-template <typename T> class RingWindow {
+template <typename T, size_t CAPACITY> class RingWindow {
 public:
-  explicit RingWindow(size_t cap)
-      : cap_(cap), buf_(new T[cap]), filled_(0), head_(0) {
-    for (size_t i = 0; i < cap_; ++i)
+  RingWindow() : filled_(0), head_(0) {
+    for (size_t i = 0; i < CAPACITY; ++i)
       buf_[i] = T();
   }
-  ~RingWindow() { delete[] buf_; }
   RingWindow(const RingWindow &) = delete;
   RingWindow &operator=(const RingWindow &) = delete;
 
   void clear() {
     filled_ = 0;
     head_ = 0;
-    for (size_t i = 0; i < cap_; ++i)
+    for (size_t i = 0; i < CAPACITY; ++i)
       buf_[i] = T();
   }
 
   // write new sample to buffer
   void add(T s) {
-    buf_[head_] = s;            // write sample to head
-    head_ = (head_ + 1) % cap_; // advance head (modulo % ensures we circle back
-                                // to 0 when we hit cap)
-    if (filled_ < cap_)
+    buf_[head_] = s;                // write sample to head
+    head_ = (head_ + 1) % CAPACITY; // advance head (modulo % ensures we circle
+                                    // back to 0 when we hit cap)
+    if (filled_ < CAPACITY)
       ++filled_; // increment filled until buffer is full (then filled equals
                  // cap)
   }
@@ -71,17 +74,17 @@ public:
     if (filled_ == 0)
       return T();
 
-    // copy data to temporary array for sorting
-    T *temp = new T[filled_];
+    // copy data to temporary fixed-size stack array for sorting
+    T temp[CAPACITY];
     for (size_t i = 0; i < filled_; ++i) {
       temp[i] = buf_[i];
     }
 
     // insertion sort
     for (size_t i = 1; i < filled_; i++) {
-      int j = i - 1;
+      size_t j = i - 1;
       T v = temp[i];
-      while (j >= 0 && temp[j] > v) {
+      while (j > 0 && temp[j] > v) {
         temp[j + 1] = temp[j];
         j--;
       }
@@ -94,14 +97,11 @@ public:
     } else {
       result = temp[filled_ / 2];
     }
-    delete[] temp;
     return result;
   }
 
 private:
-  size_t cap_; // fixed ring buffer capacity
-  T *buf_; // dynamically allocated float array (of length cap) to store samples
-  size_t filled_; // slots in buffer currently filled with valid data
-  size_t head_;   // index where the NEXT write goes to
+  T buf_[CAPACITY]; // fixed size array on stack
+  size_t filled_;   // slots in buffer currently filled with valid data
+  size_t head_;     // index where the NEXT write goes to
 };
-// =================================================
