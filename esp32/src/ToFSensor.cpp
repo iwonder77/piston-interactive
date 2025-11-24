@@ -66,7 +66,6 @@ bool ToFSensor::read(float &pos) {
   }
 
   pos = currentPosition;
-  lastSensorRead = millis();
 
   return true;
 }

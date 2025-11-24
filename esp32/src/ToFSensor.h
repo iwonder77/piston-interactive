@@ -18,12 +18,8 @@ public:
   bool ready();
   bool read(float &pos);
 
-  // get timestamp of last sensor read, allows us to detect stale sensors
-  uint32_t getLastSensorRead() const { return lastSensorRead; }
-
 private:
   VL53L1X tof;
   bool firstReading = true;
   float currentPosition = 1.0f;
-  uint32_t lastSensorRead = 0;
 };
