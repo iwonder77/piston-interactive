@@ -34,5 +34,5 @@ void setup() {
 
 void loop() {
   app.loopOnce();
-  delay(2);  // light pacing, sensor runs in continuous mode
+  // delay(15); // not needed, App class handles sensor polling logic
 }
