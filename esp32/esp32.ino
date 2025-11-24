@@ -8,8 +8,7 @@
 * Date: 7-12-25
 * Board Used: ESP32-DevkitC-V4
 * Notes:
-*   - VL53L1X.h: https://github.com/pololu/vl53l1x-arduino
-*       -- Polulu's sensor driver library for the ToF sensor
+*   - VL53L1X.h: https://github.com/pololu/vl53l1x-arduino (Polulu's sensor driver library for the ToF sensor)
 *   - the ToF sensor's region of interest (ROI) was modified to allow a smaller field of view (FoV) at 
 *     the cost of losing sensitivity
 *   - ring window is just a circular buffer, i.e. a data structure that behaves like a fixed-size 
@@ -19,14 +18,14 @@
 * (c) Thanksgiving Point Exhibits Electronics Team — 2025
 */
 
-#include <Wire.h>
-#include <VL53L1X.h>
-
 #include "src/App.h"
 
 App app;
 
 void setup() {
+  Serial.begin(115200);
+  delay(100);
+
   app.setup();
 }
 
