@@ -1,4 +1,10 @@
 #pragma once
+/**
+ * App.h
+ *
+ * Main project controller, coordinates all classes
+ * - project state machine runs in loopOnce()
+ */
 
 #include <Arduino.h>
 
