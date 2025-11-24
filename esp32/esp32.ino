@@ -18,12 +18,15 @@
 * (c) Thanksgiving Point Exhibits Electronics Team — 2025
 */
 
+#include <Wire.h>
 #include "src/App.h"
 
 App app;
 
 void setup() {
   Serial.begin(115200);
+  delay(100);
+  Wire.begin();
   delay(100);
 
   app.setup();
