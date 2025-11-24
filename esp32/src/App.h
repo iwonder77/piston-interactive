@@ -26,6 +26,8 @@ private:
   void run();
   void recover();
 
+  uint32_t lastSensorRead = 0;
+
   ToFSensor sensor;
   MotionTracker tracker;
   EngineModel engine;

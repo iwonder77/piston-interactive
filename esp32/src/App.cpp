@@ -52,49 +52,55 @@ void App::loopOnce() {
  * readings, and computes engine parameters
  */
 void App::run() {
-  // "scratchpad" for fresh position reading (is modified on every read)
-  float pos;
-  bool ok = false;
+  // NOTE: non-blocking delay logic here to ensure sensor runs smoothly
+  // according to the timing budget variable we set
+  if (millis() - lastSensorRead >= config::TIMING_BUDGET_US / 1000) {
+    lastSensorRead = millis();
+    // "scratchpad" for fresh position reading (is modified on every read)
+    float pos = 0.0f;
+    bool ok = false;
 
-  // read sensor only if data is ready
-  if (sensor.ready()) {
-    ok = sensor.read(pos);
-    // notify watchdog of reading success or failure
-    if (!ok) {
-      health.onBadRead();
-    } else {
-      health.onGoodRead();
+    // read sensor only if data is ready
+    if (sensor.ready()) {
+      ok = sensor.read(pos);
+      // notify watchdog of reading success or failure
+      if (!ok) {
+        health.onBadRead();
+      } else {
+        health.onGoodRead();
+      }
     }
+
+    // bail immediately into recovery state if health check fails
+    if (!health.healthy()) {
+      state = AppState::ERROR_RECOVERY;
+      return;
+    }
+
+    // only update motion tracker if we successfully read valid sensor data
+    if (ok) {
+      tracker.update(pos);
+    }
+    tracker.decayRPM();
+
+    // compute outputs
+    EngineReadout r =
+        engine.compute(tracker.getCrankshaftThrowMM(), tracker.getRPMs());
+    led.show(r.torque, r.hp);
+
+    // CSV for Serial Plotter
+    DEBUG_PRINT(pos, 2);
+    DEBUG_PRINT(',');
+    DEBUG_PRINT(tracker.getCrankshaftThrowMM(), 2);
+    DEBUG_PRINT(',');
+    DEBUG_PRINT(tracker.getRPMs(), 2);
+    DEBUG_PRINT(',');
+    DEBUG_PRINT(r.torque, 2);
+    DEBUG_PRINT(',');
+    DEBUG_PRINTLN(r.hp, 2);
+
+    state = tracker.isMoving() ? AppState::TRACKING : AppState::IDLE;
   }
-
-  // bail immediately into recovery state if health check fails
-  if (!health.healthy()) {
-    state = AppState::ERROR_RECOVERY;
-    return;
-  }
-
-  // now that the position was read successfully, update motion + RPM
-  // estimator with newly modified pos (filtered sensor reading)
-  tracker.update(pos);
-  tracker.decayRPM();
-
-  // compute outputs
-  EngineReadout r =
-      engine.compute(tracker.getCrankshaftThrowMM(), tracker.getRPMs());
-  led.show(r.torque, r.hp);
-
-  // CSV for Serial Plotter
-  DEBUG_PRINT(pos, 2);
-  DEBUG_PRINT(',');
-  DEBUG_PRINT(tracker.getCrankshaftThrowMM(), 2);
-  DEBUG_PRINT(',');
-  DEBUG_PRINT(tracker.getRPMs(), 2);
-  DEBUG_PRINT(',');
-  DEBUG_PRINT(r.torque, 2);
-  DEBUG_PRINT(',');
-  DEBUG_PRINTLN(r.hp, 2);
-
-  state = tracker.isMoving() ? AppState::TRACKING : AppState::IDLE;
 }
 
 /**
