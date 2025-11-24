@@ -1,6 +1,6 @@
 #include "MotionTracker.h"
 #include "Debug.h"
-#include "src/Config.h"
+#include "Config.h"
 
 /**
  * @brief Updates motion tracking with new position reading
