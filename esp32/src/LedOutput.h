@@ -41,12 +41,13 @@ private:
    */
   static int mapFloatToDuty(float v, float vmax) {
     v = config::clampf(v, 0.0f, vmax);
-    if (v <= 0.0f)
+    if (v <= 0.0f) {
       return 0;
+    }
 
     // Map 0..vmax → minDuty..maxDuty
     // but ensure max duty for PWM is display-specific based on piston size
-    uint32_t effectiveMax;
+    uint32_t effectiveMax = config::SMALL_PISTON_MAX_DUTY; // safe default
     switch (config::DISPLAY_TYPE) {
     case config::PistonSize::SMALL:
       effectiveMax = config::SMALL_PISTON_MAX_DUTY;
