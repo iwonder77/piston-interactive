@@ -1,8 +1,11 @@
 #include "MotionTracker.h"
+#include "Debug.h"
+#include "src/Config.h"
 
 /**
- * @brief Update all ring windows, calculate throw and RPM only if valid motion
- * is detected
+ * @brief Updates motion tracking with new position reading
+ *
+ * Detects motion, updates all ring windows, calculates throw and RPM
  *
  * @param pos Filtered sensor reading
  */
@@ -13,7 +16,7 @@ void MotionTracker::update(float pos) {
   if (d > config::MIN_MOTION_DELTA_MM) {
     if (!moving) {
       moving = true;
-      Serial.println("Motion detected — tracking");
+      DEBUG_PRINTLN("Motion detected — tracking");
     }
     lastMotionMs = now;
 
@@ -63,8 +66,9 @@ void MotionTracker::update(float pos) {
         // a half cycle occurs when we hit the second center cross timestamp,
         // calculate that time interval here
         uint32_t half = now - lastZeroCrossMs;
-        // reject unreasonable calcs
-        if (half > 10 && half < 10000) {
+        // reject unreasonable half cycle calculations
+        if (half > config::MIN_HALF_CYCLE_MS &&
+            half < config::MAX_HALF_CYCLE_MS) {
           uint32_t fullPeriod = half * 2;
           periodWindow.add(fullPeriod);
           float avgPeriod = periodWindow.average();
@@ -93,7 +97,7 @@ void MotionTracker::update(float pos) {
 
   // if motion times out, we reset everything
   if (moving && (now - lastMotionMs > config::MOTION_TIMEOUT_MS)) {
-    Serial.println("Motion timeout — reset");
+    DEBUG_PRINTLN("Motion timeout — reset");
     reset(pos);
   }
 
@@ -127,9 +131,9 @@ void MotionTracker::reset(float pos) {
  */
 void MotionTracker::decayRPM() {
   uint32_t now = millis();
-  if (rpm > 0 && (now - lastRPMUpdateMs > 1000)) {
-    rpm *= 0.99f;
-    if (rpm < 10.0f)
+  if (rpm > 0 && (now - lastRPMUpdateMs > config::RPM_DECAY_TIMEOUT_MS)) {
+    rpm *= config::RPM_DECAY_FACTOR;
+    if (rpm < config::RPM_DECAY_MIN)
       rpm = 0.0f;
   }
 }

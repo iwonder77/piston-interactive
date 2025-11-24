@@ -1,12 +1,17 @@
+#pragma once
+/**
+ * MotionTracker.14:14:37
+ *
+ * Tracks piston motion, detects throw measurement, and estimates RPM with
+ * zero-crossing algorithm
+ */
 #include "Config.h"
 #include "RingWindow.h"
 #include <Arduino.h>
 
 class MotionTracker {
 public:
-  MotionTracker()
-      : window(config::PEAK_MIN_MAX_WINDOW_SIZE),
-        periodWindow(config::PEAK_PERIOD_WINDOW_SIZE) {}
+  MotionTracker() = default;
 
   void update(float pos);
   void reset(float pos);
@@ -18,13 +23,13 @@ public:
   }
   float getCrankshaftThrowMM() const { return crankshaftThrow; }
   float getRPMs() const { return rpm; }
-  uint32_t getlastRPMUpdate() const { return lastRPMUpdateMs; }
+  uint32_t getLastRPMUpdate() const { return lastRPMUpdateMs; }
 
 private:
   enum class Edge : uint8_t { UNKNOWN, ABOVE, BELOW };
 
-  RingWindow<size_t> periodWindow;
-  RingWindow<size_t> window;
+  RingWindow<size_t, config::PEAK_PERIOD_WINDOW_SIZE> periodWindow;
+  RingWindow<size_t, config::PEAK_MIN_MAX_WINDOW_SIZE> window;
 
   bool moving = false;
   bool throwValid = false;
