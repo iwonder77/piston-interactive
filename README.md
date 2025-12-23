@@ -15,7 +15,7 @@ Source code for the piston interactive at Kidopolis, designed to teach children 
 
 ## Wiring Diagram
 
-![schematic diagram](docs/Piston_Interactive.jpg)
+![schematic diagram](docs/piston_interactive_schematic.jpg)
 
 ## ESP32 Software Architecture
 
