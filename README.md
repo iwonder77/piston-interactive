@@ -11,6 +11,10 @@ Source code for the piston interactive at Kidopolis, designed to teach children 
 - LED Drivers: 2 x [QuinLED Dig Uno](https://quinled.info/quinled-dig-uno/) drivers
 - LED Strips: 10 x 12V WS2815 LED Strips
 
+## Wiring Diagram
+
+![schematic diagram](docs/Piston_Interactive.jpg)
+
 ## ESP32 Software Architecture
 
 ### Overview
