@@ -8,7 +8,7 @@ bool ToFSensor::init() {
   first_reading_ = true;
   current_position_ = 0.0f;
 
-  // see Pololu's VL53L1X github repo for more inforamtion
+  // see Pololu's VL53L1X github repo for more information
   tof_.setTimeout(config::SENSOR_TIMEOUT_MS);
   if (!tof_.init()) {
     return false;
