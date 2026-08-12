@@ -19,6 +19,10 @@ enum AppState { INIT, IDLE, TRACKING, ERROR_RECOVERY };
 
 class App {
 public:
+  App() = default;
+  App(const App &) = delete;
+  App &operator=(const App &) = delete;
+
   void setup();
   void loopOnce(); // runs in main loop (FINITE STATE MACHINE)
 
@@ -27,6 +31,7 @@ private:
   void recover();
 
   uint32_t lastSensorRead = 0;
+  float last_pos_ = 0.0f;
 
   ToFSensor sensor;
   MotionTracker tracker;
