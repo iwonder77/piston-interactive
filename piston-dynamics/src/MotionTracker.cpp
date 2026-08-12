@@ -11,9 +11,9 @@
  */
 void MotionTracker::update(float pos) {
   uint32_t now = millis();
-  float d = fabsf(pos - last_pos_);
+  float delta_mm = fabsf(pos - last_pos_);
 
-  if (d > config::MIN_MOTION_DELTA_MM) {
+  if (delta_mm > config::MIN_MOTION_DELTA_MM) {
     if (!moving_) {
       moving_ = true;
       DEBUG_PRINTLN("Motion detected — tracking");
