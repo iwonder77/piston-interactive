@@ -1,71 +1,61 @@
 #include "ToFSensor.h"
 #include "Config.h"
+#include <cstdint>
 
-/**
- * @brief Custom VL53L1X sensor configuration
- *
- * @return Successful sensor initialization
- */
-bool ToFSensor::configure() {
+bool ToFSensor::init() {
+  // NOTE: re-init path - clear filter state so the next read() seeds the EMA
+  // rather than blending fresh readings
+  first_reading_ = true;
+  current_position_ = 0.0f;
+
   // see Pololu's VL53L1X github repo for more inforamtion
-  tof.setTimeout(config::SENSOR_TIMEOUT_MS);
-  if (!tof.init()) {
+  tof_.setTimeout(config::SENSOR_TIMEOUT_MS);
+  if (!tof_.init()) {
     return false;
   }
   // set the region of interest (ROI) to 6x6 pixels (smaller ROI = narrower FoV
   // = better accuracy, less noise)
-  tof.setROISize(config::ROI_W, config::ROI_H);
+  tof_.setROISize(config::ROI_W, config::ROI_H);
 
   // set the center of the sensor's Region of Interest (ROI)
-  tof.setROICenter(config::ROI_CENTER);
+  tof_.setROICenter(config::ROI_CENTER);
 
   // set the distance mode to short (available choices are Short, Medium, Long)
-  tof.setDistanceMode(VL53L1X::Short);
+  tof_.setDistanceMode(VL53L1X::Short);
 
   // measurement timing budget
-  tof.setMeasurementTimingBudget(config::TIMING_BUDGET_US);
+  tof_.setMeasurementTimingBudget(config::TIMING_BUDGET_US);
 
   // the specified inter-measurement period in milliseconds determines how often
   // the sensor takes a measurement
-  tof.startContinuous(config::INTER_MEAS_MS);
+  tof_.startContinuous(config::INTER_MEAS_MS);
   return true;
 }
 
-/**
- * @brief We must check Pololu's dataReady() before reading sensor data
- *
- * @return Sensor ready boolean
- */
-bool ToFSensor::ready() { return tof.dataReady(); }
+bool ToFSensor::ready() { return tof_.dataReady(); }
 
-/**
- * @brief Method called to read sensor data
- *
- * @return Returns true when reading was successful, and modifies position
- * variable that was passed by reference
- */
 bool ToFSensor::read(float &pos) {
   // Pololu read() clears data ready flag and returns a uint16_t type
-  uint16_t rawReading = tof.read();
+  uint16_t raw_reading = tof_.read();
 
   // ensure reading makes sense
-  if (rawReading == 0 || rawReading == 65535)
+  if (raw_reading == 0 || raw_reading == UINT16_MAX)
     return false;
 
-  float f = static_cast<float>(rawReading);
+  float f = static_cast<float>(raw_reading);
   if (f < config::MIN_VALID_MM || f > config::MAX_VALID_MM)
     return false;
 
   // smooth readings with EMA filter
-  if (firstReading) {
-    currentPosition = f;
-    firstReading = false;
+  if (first_reading_) {
+    current_position_ = f;
+    first_reading_ = false;
   } else {
-    currentPosition =
-        currentPosition + config::EMA_POS_ALPHA * (f - currentPosition);
+    current_position_ =
+        current_position_ + config::EMA_POS_ALPHA * (f - current_position_);
   }
 
-  pos = currentPosition;
+  pos = current_position_;
 
   return true;
 }
