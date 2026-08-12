@@ -33,10 +33,12 @@ private:
 
   bool moving_ = false;
   bool is_throw_valid_ = false;
+  // --- all in mm ---
   float last_pos_ = 0;
   float max_pos_ = 0;
   float min_pos_ = 0;
   float crankshaft_throw_ = 0;
+  // -----------------
   float rpm_ = 0;
   bool rpm_init_ = false;
   uint32_t last_motion_ms_ = 0;
