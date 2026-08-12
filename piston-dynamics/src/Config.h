@@ -16,7 +16,7 @@ constexpr uint8_t ROI_W = 6;                // 4..16 typical
 constexpr uint8_t ROI_H = 6;
 constexpr uint8_t ROI_CENTER = 199;
 constexpr uint16_t TIMING_BUDGET_US = 15000; // 15 ms budget
-constexpr uint16_t INTER_MEAS_MS = 5;        // continuous period
+constexpr uint16_t INTER_MEAS_MS = 15;       // continuous period
 
 // --- SENSOR READING WINDOW ---
 constexpr float MIN_VALID_MM = 20.0f; // 4 cm is lowest reading recommended from
