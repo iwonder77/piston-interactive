@@ -25,10 +25,10 @@ void MotionTracker::update(float pos) {
     float w_max = pos_window_.getMax();
     float w_min = pos_window_.getMin();
     // hysteretic min/max updates
-    if (!isnan(w_max) && fabs(w_max - max_pos_) > config::MIN_MAX_HYST_MM) {
+    if (fabsf(w_max - max_pos_) > config::MIN_MAX_HYST_MM) {
       max_pos_ = w_max;
     }
-    if (!isnan(w_min) && fabs(w_min - min_pos_) > config::MIN_MAX_HYST_MM) {
+    if (fabsf(w_min - min_pos_) > config::MIN_MAX_HYST_MM) {
       min_pos_ = w_min;
     }
 
