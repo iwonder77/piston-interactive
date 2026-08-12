@@ -18,29 +18,29 @@ public:
   void decayRPM();
 
   bool isMoving() const {
-    return moving && throwValid &&
-           crankshaftThrow >= config::MIN_THROW_FOR_MOTION_MM;
+    return moving_ && is_throw_valid_ &&
+           crankshaft_throw_ >= config::MIN_THROW_FOR_MOTION_MM;
   }
-  float getCrankshaftThrowMM() const { return crankshaftThrow; }
-  float getRPMs() const { return rpm; }
-  uint32_t getLastRPMUpdate() const { return lastRPMUpdateMs; }
+  float getCrankshaftThrowMM() const { return crankshaft_throw_; }
+  float getRPMs() const { return rpm_; }
+  uint32_t getLastRPMUpdate() const { return last_rpm_update_ms_; }
 
 private:
   enum class Edge : uint8_t { UNKNOWN, ABOVE, BELOW };
 
-  RingWindow<size_t, config::PEAK_PERIOD_WINDOW_SIZE> periodWindow;
-  RingWindow<size_t, config::PEAK_MIN_MAX_WINDOW_SIZE> window;
+  RingWindow<uint32_t, config::PEAK_PERIOD_WINDOW_SIZE> period_window_;
+  RingWindow<float, config::PEAK_MIN_MAX_WINDOW_SIZE> pos_window_;
 
-  bool moving = false;
-  bool throwValid = false;
-  float lastPos = 0;
-  float maxPos = 0;
-  float minPos = 0;
-  float crankshaftThrow = 0;
-  float rpm = 0;
-  bool rpm_init = false;
-  uint32_t lastMotionMs = 0;
-  uint32_t lastZeroCrossMs = 0;
-  uint32_t lastRPMUpdateMs = 0;
-  Edge lastEdge = Edge::UNKNOWN;
+  bool moving_ = false;
+  bool is_throw_valid_ = false;
+  float last_pos_ = 0;
+  float max_pos_ = 0;
+  float min_pos_ = 0;
+  float crankshaft_throw_ = 0;
+  float rpm_ = 0;
+  bool rpm_init_ = false;
+  uint32_t last_motion_ms_ = 0;
+  uint32_t last_zero_cross_ms_ = 0;
+  uint32_t last_rpm_update_ms_ = 0;
+  Edge last_edge_ = Edge::UNKNOWN;
 };
