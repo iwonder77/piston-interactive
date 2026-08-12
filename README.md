@@ -33,7 +33,7 @@ Purpose: The interface for the VL53L1X sensor, measuring piston head position
 
 Key Methods:
 
-1. `configure()`: sensor initialization with ROI and timing settings (see [Polulu's](https://github.com/pololu/vl53l1x-arduino) library for this sensor for more information on config settings)
+1. `init()`: sensor initialization with ROI and timing settings (see [Pololu's](https://github.com/pololu/vl53l1x-arduino) library for this sensor for more information on config settings)
    - note: in the future I would like to add auto sensor calibration based on scene/environment but these settings worked alright
 2. `read()`: position reading with EMA smoothing filter
 3. `ready()`: non-blocking data availability check
