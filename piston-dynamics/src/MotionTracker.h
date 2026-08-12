@@ -13,8 +13,27 @@ class MotionTracker {
 public:
   MotionTracker() = default;
 
+  /**
+   * @brief Updates motion tracking with new position reading
+   *
+   * Detects motion, updates all ring windows, calculates throw and RPM
+   *
+   * @param pos Filtered sensor reading
+   */
   void update(float pos);
+
+  /**
+   * @brief Resets the class members, ring window objects, and center crossing
+   * state machine
+   *
+   * @param pos Value to reset members with
+   */
   void reset(float pos);
+
+  /**
+   * @brief Applies gentle decay to rpm value when, for example, a
+   * kid stops spinning the crankshaft
+   */
   void decayRPM();
 
   bool isMoving() const {

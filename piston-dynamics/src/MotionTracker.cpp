@@ -2,13 +2,6 @@
 #include "Config.h"
 #include "Debug.h"
 
-/**
- * @brief Updates motion tracking with new position reading
- *
- * Detects motion, updates all ring windows, calculates throw and RPM
- *
- * @param pos Filtered sensor reading
- */
 void MotionTracker::update(float pos) {
   uint32_t now = millis();
   float delta_mm = fabsf(pos - last_pos_);
@@ -105,12 +98,6 @@ void MotionTracker::update(float pos) {
   last_pos_ = pos;
 }
 
-/**
- * @brief Resets the class members, ring window objects, and center crossing
- * state machine
- *
- * @param pos Value to reset members with
- */
 void MotionTracker::reset(float pos) {
   period_window_.clear();
   pos_window_.clear();
@@ -126,10 +113,6 @@ void MotionTracker::reset(float pos) {
   last_edge_ = Edge::UNKNOWN;
 }
 
-/**
- * @brief Applies gentle decay to rpm value when, for example, a
- * kid stops spinning the crankshaft
- */
 void MotionTracker::decayRPM() {
   uint32_t now = millis();
   if (rpm_ > 0 && (now - last_rpm_update_ms_ > config::RPM_DECAY_TIMEOUT_MS)) {
