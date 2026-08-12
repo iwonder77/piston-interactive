@@ -52,7 +52,7 @@ Key Methods:
 Key Features:
 
 - **Motion Detection**: Simple calculation of change in position `d`, only move forward if the absolute value of this change is greater than a pre-specified constant `d > config::MIN_MOTION_DELTA_MM`
-- **Crankshaft Throw Calculation**: Once the ring windows for min/max are updated, the throw is just (min-max)/2, if this calculated throw passes some validity checks, we update crankshaftThrow and set the throwValid flag to move on to center crossing
+- **Crankshaft Throw Calculation**: Once the ring windows for min/max are updated, the throw is just (min-max)/2, if this calculated throw passes some validity checks, we update `crankshaft_throw_` and set the `is_throw_valid_` flag to move on to center crossing
 - **Center Crossing RPM calculation**:
 
 This is where the fun begins, the filtered distance readings form a clean-ish oscillating wave as the piston moves (drawn below). By taking the midpoint between the minimum and maximum readings, calculated with (min + max)/2, we establish a logical "center" of the pistons travvel. This center value acts as a checkpoint that tells us when the piston crosses from one side of its motion to the other. A small state machine, using the `Edge` enum (`ABOVE`, `BELOW`, `UNKNOWN`) tracks whether the current reading is above or below that threshold. Adding some hysteresis to these position vs. center checks prevents rapid flickering between states and results in more stable transitions.
