@@ -18,8 +18,6 @@
 #include "src/Config.h"
 #include "src/Debug.h"
 
-#define PWM_INPUT_PIN 32
-
 // ----- TIMER INTERRUPT VARIABLES FOR PWM CALC -----
 volatile unsigned long pulse_start_time = 0;
 volatile unsigned long pulse_width = 0;
@@ -28,30 +26,22 @@ volatile unsigned long period_length = 0;
 volatile bool new_data_available = false;
 
 // ----- LED SETUP -----
-const int NUM_LEDS = 47;
-const int LED_DATA_PIN = 3;
-const int LED_BRIGHTNESS = 20;
-const int NUM_ANIMATION_LEDS = 30;
-CRGB leds[NUM_LEDS];
+CRGB leds[config::NUM_LEDS];
 
 // ----- RUNNING AVG FILTER -----
-const int AVERAGE_SAMPLES = 5;
-RunningAverage dutyCycleFilter(AVERAGE_SAMPLES);
+RunningAverage dutyCycleFilter(config::AVERAGE_SAMPLES);
 
 // ----- IDLE ANIMATION VARIABLES -----
-const unsigned long IDLE_TIMEOUT = 5000;  // Start idling after 5 seconds
 unsigned long lastActivityTime = 0;
 float wavePhase = 0;
 
 // ----- CORE FUNC VARIABLES -----
-const int LED_HYSTERESIS_THRESHOLD = 2;
-int lastNumLEDs = 0;
 int currentTargetLEDs = 0;  // The base LED count from PWM calc
 
 // ========== INTERRUPT FUNCTION ==========
 void IRAM_ATTR pwmInterrupt() {
   unsigned long current_time = micros();
-  int pinState = digitalRead(PWM_INPUT_PIN);
+  int pinState = digitalRead(config::PWM_INPUT_PIN);
 
   switch (pinState) {
     // rising edge (start of a new pulse)
@@ -74,43 +64,47 @@ void IRAM_ATTR pwmInterrupt() {
 // ========== LED STRIP UPDATE FUNCTION ==========
 void updateDisplay() {
   unsigned long currentTime = millis();
-  bool isIdling = (currentTime - lastActivityTime) > IDLE_TIMEOUT;
+  bool isIdling = (currentTime - lastActivityTime) > config::IDLE_TIMEOUT_MS;
 
   int displayLEDs = currentTargetLEDs;
 
   if (isIdling && currentTargetLEDs > 0) {
     // Create breathing/wave effect during idle
-    wavePhase += 0.01;  // Speed of breathing animation
+    wavePhase += config::WAVE_PHASE_STEP;
     if (wavePhase > TWO_PI) wavePhase = 0;
 
     // Create wave that oscillates ±25% around the target
-    float waveMultiplier = 1.0 + (sin(wavePhase) * 0.25);  // 0.75 to 1.25
-    displayLEDs = (int)(NUM_ANIMATION_LEDS * waveMultiplier);
-    displayLEDs = constrain(displayLEDs, 1, NUM_LEDS);
+    float waveMultiplier = 1.0 + (sin(wavePhase) * config::WAVE_AMPLITUDE);
+    displayLEDs = (int)(config::NUM_ANIMATION_LEDS * waveMultiplier);
+    displayLEDs = constrain(displayLEDs, 1, config::NUM_LEDS);
 
     // Add subtle randomness for more organic feel
-    if (random(100) < 10) {          // 10% chance each frame
+    if (random(config::PERCENT_MAX) < config::JITTER_CHANCE_PCT) {
       displayLEDs += random(-1, 2);  // ±1 LED jitter
-      displayLEDs = constrain(displayLEDs, 1, NUM_LEDS);
+      displayLEDs = constrain(displayLEDs, 1, config::NUM_LEDS);
     }
   }
 
   // Clear all LEDs
-  fill_solid(leds, NUM_LEDS, CRGB::Black);
+  fill_solid(leds, config::NUM_LEDS, CRGB::Black);
 
   // Choose color based on state
-  CRGB ledColor = isIdling ? CRGB(255, 80, 0) : CRGB::Green;  // Red for idle, Green for active
+  CRGB ledColor = isIdling ? CRGB(config::IDLE_COLOR_R, config::IDLE_COLOR_G,
+                                  config::IDLE_COLOR_B)
+                           : CRGB::Green;
 
   // Create the wave effect you want
-  for (int i = 0; i < displayLEDs && i < NUM_LEDS; i++) {
+  for (int i = 0; i < displayLEDs && i < config::NUM_LEDS; i++) {
     if (isIdling) {
       // During idle: create a wave intensity that fades toward the edges
       float distanceFromCenter = abs(i - (displayLEDs / 2.0));
       float maxDistance = displayLEDs / 2.0;
-      float intensity = 1.0 - (distanceFromCenter / maxDistance * 0.5);  // 50% fade to edges
+      float intensity = 1.0 - (distanceFromCenter / maxDistance * config::EDGE_FADE);
 
       // Add wave motion along the strip
-      float waveIntensity = sin(wavePhase + (i * 0.3)) * 0.3 + 0.7;  // 0.4 to 1.0
+      float waveIntensity = sin(wavePhase + (i * config::WAVE_SPATIAL_FREQ)) *
+                                config::WAVE_INTENSITY_SCALE +
+                            config::WAVE_INTENSITY_OFFSET;
       intensity *= waveIntensity;
 
       leds[i] = CRGB(
@@ -129,16 +123,17 @@ void updateDisplay() {
 
 void setup() {
   Serial.begin(115200);
-  pinMode(PWM_INPUT_PIN, INPUT_PULLUP);
-  FastLED.addLeds<WS2815, LED_DATA_PIN, RGB>(leds, NUM_LEDS);
-  FastLED.setBrightness(255 * LED_BRIGHTNESS / 100);
+  pinMode(config::PWM_INPUT_PIN, INPUT_PULLUP);
+  FastLED.addLeds<WS2815, config::LED_DATA_PIN, RGB>(leds, config::NUM_LEDS);
+  FastLED.setBrightness(config::LED_BRIGHTNESS);
 
   dutyCycleFilter.clear();
   lastActivityTime = millis();
 
-  attachInterrupt(digitalPinToInterrupt(PWM_INPUT_PIN), pwmInterrupt, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(config::PWM_INPUT_PIN), pwmInterrupt,
+                  CHANGE);
 
-  currentTargetLEDs = 20;
+  currentTargetLEDs = config::INITIAL_TARGET_LEDS;
 
   esp_task_wdt_config_t wdt_config = {
     .timeout_ms = config::WDT_TIMEOUT_MS,
@@ -162,16 +157,19 @@ void loop() {
     unsigned long safe_period = period_length;
     new_data_available = false;
     interrupts();
-    if (safe_period >= 100) {
-      float duty_cycle = (float)safe_pulse_width / safe_period * 100;
-      duty_cycle = constrain(duty_cycle, 0, 100);
+    if (safe_period >= config::MIN_VALID_PERIOD_US) {
+      float duty_cycle =
+          (float)safe_pulse_width / safe_period * config::PERCENT_MAX;
+      duty_cycle = constrain(duty_cycle, 0, config::PERCENT_MAX);
       dutyCycleFilter.addValue(duty_cycle);
       float smoothedDutyCycle = dutyCycleFilter.getAverage();
-      int targetLEDs = map(smoothedDutyCycle, 0, 100, 0, NUM_LEDS - 1);
-      targetLEDs = constrain(targetLEDs, 0, NUM_LEDS - 1);
+      int targetLEDs = map(smoothedDutyCycle, 0, config::PERCENT_MAX, 0,
+                           config::NUM_LEDS - 1);
+      targetLEDs = constrain(targetLEDs, 0, config::NUM_LEDS - 1);
 
       // check if target LEDs changed significantly
-      if (abs(targetLEDs - currentTargetLEDs) >= LED_HYSTERESIS_THRESHOLD) {
+      if (abs(targetLEDs - currentTargetLEDs) >=
+          config::LED_HYSTERESIS_THRESHOLD) {
         currentTargetLEDs = targetLEDs;
         lastActivityTime = millis();  // Reset idle timer
       }
@@ -180,5 +178,7 @@ void loop() {
   // always update display (either normal or with idle animation)
   updateDisplay();
 
-  delay(2);
+  // TODO: replace with non-blocking frame timing (styleguide 6) when the
+  // animation moves into its own class
+  delay(config::FRAME_INTERVAL_MS);
 }
