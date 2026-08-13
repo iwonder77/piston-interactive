@@ -14,7 +14,8 @@ CompileFlags:
     - "-I./src"
     - "-I."
     - "-std=c++17"
-    - "-D__AVR__"
+    - "-DESP32"
+    - "-DARDUINO_ARCH_ESP32"
     - "-DARDUINO=10819"
     - "-Wno-unknown-pragmas"
     - "-xc++" # force C++ mode for all files
