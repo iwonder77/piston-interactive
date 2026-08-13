@@ -13,6 +13,9 @@
 
 #include <FastLED.h>
 #include <RunningAverage.h>
+#include <esp_task_wdt.h>
+
+#include <src/Config.h>
 
 #define PWM_INPUT_PIN 32
 
@@ -135,6 +138,18 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(PWM_INPUT_PIN), pwmInterrupt, CHANGE);
 
   currentTargetLEDs = 20;
+
+  esp_task_wdt_config_t wdt_config = {
+    .timeout_ms = config::WDT_TIMEOUT_MS,
+    .idle_core_mask = config::WDT_IDLE_CORE_MASK,
+    .trigger_panic = true,
+  };
+  if (esp_task_wdt_reconfigure(&wdt_config) != ESP_OK) {
+    DEBUG_PRINTLN("WDT reconfigure failed");
+  }
+  if (esp_task_wdt_add(NULL) != ESP_OK) {
+    DEBUG_PRINTLN("WDT subscribe failed");
+  }
 }
 
 void loop() {
