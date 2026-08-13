@@ -10,6 +10,11 @@
 #include <Arduino.h>
 
 namespace config {
+// --- WATCHDOG & BUS TIMEOUTS ---
+constexpr uint32_t WDT_TIMEOUT_MS = 5000;
+constexpr uint32_t WDT_IDLE_CORE_MASK = (1 << 0);
+constexpr uint16_t I2C_TIMEOUT_MS = 100;
+
 // --- VL53L1X ---
 constexpr uint16_t SENSOR_TIMEOUT_MS = 500; // VL53L1X timeout
 constexpr uint8_t ROI_W = 6;                // 4..16 typical
