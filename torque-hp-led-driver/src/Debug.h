@@ -2,12 +2,12 @@
 /**
  * Debug.h
  *
- * Simple debug logging macro (same pattern used in the Leonardo code).
- * Set DEBUG_LEVEL to 0 to compile out debug prints.
- *
- * Note: On MKRZero Serial refers to the USB CDC serial port used for logs.
+ * Simple debug logging macros. Set DEBUG_LEVEL to 0 to compile out debug
+ * prints.
  */
+#ifndef DEBUG_LEVEL
 #define DEBUG_LEVEL 1
+#endif
 
 #if DEBUG_LEVEL >= 1
 #define DEBUG_PRINT(...) Serial.print(__VA_ARGS__)
