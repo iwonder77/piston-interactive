@@ -15,7 +15,8 @@
 #include <RunningAverage.h>
 #include <esp_task_wdt.h>
 
-#include <src/Config.h>
+#include "src/Config.h"
+#include "src/Debug.h"
 
 #define PWM_INPUT_PIN 32
 
@@ -153,6 +154,7 @@ void setup() {
 }
 
 void loop() {
+  esp_task_wdt_reset();
   // make sure high time reading is valid
   if (new_data_available) {
     noInterrupts();
