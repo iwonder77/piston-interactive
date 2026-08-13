@@ -19,7 +19,11 @@
 */
 
 #include <Wire.h>
+#include <esp_task_wdt.h>
+
 #include "src/App.h"
+#include "src/Config.h"
+#include "src/Debug.h"
 
 App app;
 
@@ -27,12 +31,30 @@ void setup() {
   Serial.begin(115200);
   delay(100);
   Wire.begin();
+  Wire.setTimeOut(config::I2C_TIMEOUT_MS);
   delay(100);
 
   app.setup();
+
+  // NOTE: the ESP32 core starts the task watchdog at boot but does not subscribe it
+  // to the Arduino's loop task, so a hang inside loop() goes undetected. Reconfigure the timeout
+  // then subscribe it.
+  esp_task_wdt_config_t wdt_config = {
+    .timeout_ms = config::WDT_TIMEOUT_MS,
+    .idle_core_mask = config::WDT_IDLE_CORE_MASK,
+    .trigger_panic = true,
+  };
+  if (esp_task_wdt_reconfigure(&wdt_config) != ESP_OK) {
+    DEBUG_PRINTLN("WDT reconfigure failed");
+  }
+  if (esp_task_wdt_add(NULL) != ESP_OK) {
+    DEBUG_PRINTLN("WDT subscribe failed");
+  }
 }
 
+
 void loop() {
+  esp_task_wdt_reset();
   app.loopOnce();
   // delay(15); // not needed, App class handles sensor polling logic
 }
