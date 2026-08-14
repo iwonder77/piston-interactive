@@ -1,22 +1,22 @@
-/* 
-* ----------------------------------------------
-* PROJECT NAME: Piston Interactive DigUno LED Driver code
+/** 
+* Interactive: Piston Interactive
+* File: torque-hp-led-driver.ino
 * Description: QuinLED Dig Uno receives PWM signal whose strength is proportional to 
-*              the torque or horsepower produced by spinning crankshaft, lights LED strip accordingly
+* the torque or horsepower produced by spinning crankshaft, lights LED strip accordingly
 * 
 * Author: Isai Sanchez
 * Date: 7-16-25
 * Board Used: QuinLED Dig Uno
-* Notes:
-* ----------------------------------------------
+*
+* (c) Thanksgiving Point Exhibits Electronics Team — 2025
 */
 
 #include <FastLED.h>
-#include <RunningAverage.h>
 #include <esp_task_wdt.h>
 
 #include "src/Config.h"
 #include "src/Debug.h"
+#include "src/RingWindow.h"
 
 // ----- TIMER INTERRUPT VARIABLES FOR PWM CALC -----
 volatile unsigned long pulse_start_time = 0;
@@ -28,8 +28,8 @@ volatile bool new_data_available = false;
 // ----- LED SETUP -----
 CRGB leds[config::NUM_LEDS];
 
-// ----- RUNNING AVG FILTER -----
-RunningAverage dutyCycleFilter(config::AVERAGE_SAMPLES);
+// ----- RING WINDOW -----
+RingWindow<float, config::AVERAGE_SAMPLES> duty_cycle_filter;
 
 // ----- IDLE ANIMATION VARIABLES -----
 unsigned long lastActivityTime = 0;
@@ -102,9 +102,7 @@ void updateDisplay() {
       float intensity = 1.0 - (distanceFromCenter / maxDistance * config::EDGE_FADE);
 
       // Add wave motion along the strip
-      float waveIntensity = sin(wavePhase + (i * config::WAVE_SPATIAL_FREQ)) *
-                                config::WAVE_INTENSITY_SCALE +
-                            config::WAVE_INTENSITY_OFFSET;
+      float waveIntensity = sin(wavePhase + (i * config::WAVE_SPATIAL_FREQ)) * config::WAVE_INTENSITY_SCALE + config::WAVE_INTENSITY_OFFSET;
       intensity *= waveIntensity;
 
       leds[i] = CRGB(
@@ -127,7 +125,7 @@ void setup() {
   FastLED.addLeds<WS2815, config::LED_DATA_PIN, RGB>(leds, config::NUM_LEDS);
   FastLED.setBrightness(config::LED_BRIGHTNESS);
 
-  dutyCycleFilter.clear();
+  duty_cycle_filter.clear();
   lastActivityTime = millis();
 
   attachInterrupt(digitalPinToInterrupt(config::PWM_INPUT_PIN), pwmInterrupt,
@@ -159,17 +157,16 @@ void loop() {
     interrupts();
     if (safe_period >= config::MIN_VALID_PERIOD_US) {
       float duty_cycle =
-          (float)safe_pulse_width / safe_period * config::PERCENT_MAX;
+        (float)safe_pulse_width / safe_period * config::PERCENT_MAX;
       duty_cycle = constrain(duty_cycle, 0, config::PERCENT_MAX);
-      dutyCycleFilter.addValue(duty_cycle);
-      float smoothedDutyCycle = dutyCycleFilter.getAverage();
-      int targetLEDs = map(smoothedDutyCycle, 0, config::PERCENT_MAX, 0,
+      duty_cycle_filter.add(duty_cycle);
+      float smooth_duty_cycle = duty_cycle_filter.average();
+      int targetLEDs = map(smooth_duty_cycle, 0, config::PERCENT_MAX, 0,
                            config::NUM_LEDS - 1);
       targetLEDs = constrain(targetLEDs, 0, config::NUM_LEDS - 1);
 
       // check if target LEDs changed significantly
-      if (abs(targetLEDs - currentTargetLEDs) >=
-          config::LED_HYSTERESIS_THRESHOLD) {
+      if (abs(targetLEDs - currentTargetLEDs) >= config::LED_HYSTERESIS_THRESHOLD) {
         currentTargetLEDs = targetLEDs;
         lastActivityTime = millis();  // Reset idle timer
       }

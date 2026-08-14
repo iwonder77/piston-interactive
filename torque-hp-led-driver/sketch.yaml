@@ -6,7 +6,6 @@ profiles:
       - platform: esp32:esp32 (3.3.10)
     libraries:
       - FastLED (3.10.5)
-      - RunningAverage (0.4.9)
 
 default_profile: quinled-dig-uno
 default_fqbn: esp32:esp32:esp32:UploadSpeed=115200
