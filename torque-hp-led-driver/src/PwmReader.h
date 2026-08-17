@@ -15,7 +15,21 @@ public:
   PwmReader(const PwmReader &) = delete;
   PwmReader &operator=(const PwmReader &) = delete;
 
+  /**
+   * @brief Simple hardware initialization, ensure instance object pointer
+   * points to the right place, then attach interrupt
+   * @return true always
+   */
   bool init();
+
+  /**
+   * @brief Reads the latest PWM measurement and applies
+   * the running average using RingWindow
+   *
+   * @param duty_cycle_pct set to the smoothed duty cycle
+   * percentage (0-100) on a successful read
+   * @return true when a fresh and valid measurement was available
+   */
   bool read(float &duty_cycle_pct);
 
 private:
