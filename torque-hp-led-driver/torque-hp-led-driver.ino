@@ -28,7 +28,7 @@ uint32_t lastActivityTime = 0;
 float wavePhase = 0.0f;
 
 // ----- CORE FUNC VARIABLES -----
-int currentTargetLEDs = 0;  // The base LED count from PWM calc
+uint16_t currentTargetLEDs = 0;  // The base LED count from PWM calc
 
 // ========== LED STRIP UPDATE FUNCTION ==========
 void updateDisplay() {
@@ -117,7 +117,7 @@ void setup() {
 void loop() {
   esp_task_wdt_reset();
   // make sure high time reading is valid
-  float duty_cycle_pct = 0;
+  float duty_cycle_pct = 0.0f;
   if (pwm_reader.read(duty_cycle_pct)) {
     int targetLEDs = map(duty_cycle_pct, 0, config::PERCENT_MAX, 0,
                          config::NUM_LEDS - 1);
