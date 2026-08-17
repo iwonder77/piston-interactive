@@ -54,8 +54,8 @@ void App::loopOnce() {
 void App::run() {
   // NOTE: non-blocking delay logic here to ensure sensor runs smoothly
   // according to the timing budget variable we set
-  if (millis() - lastSensorRead >= config::TIMING_BUDGET_US / 1000) {
-    lastSensorRead = millis();
+  if (millis() - last_sensor_read_ >= config::TIMING_BUDGET_US / 1000) {
+    last_sensor_read_ = millis();
     // "scratchpad" for fresh position reading (is modified on every read)
     float pos = 0.0f;
     bool ok = false;

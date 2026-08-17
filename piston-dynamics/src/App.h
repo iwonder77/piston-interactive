@@ -15,7 +15,7 @@
 #include "ToFSensor.h"
 
 // ======= HEALTH / Finite-State Machine (FSM) ========
-enum AppState { INIT, IDLE, TRACKING, ERROR_RECOVERY };
+enum class AppState : uint8_t { INIT, IDLE, TRACKING, ERROR_RECOVERY };
 
 class App {
 public:
@@ -30,7 +30,7 @@ private:
   void run();
   void recover();
 
-  uint32_t lastSensorRead = 0;
+  uint32_t last_sensor_read_ = 0;
   float last_pos_ = 0.0f;
 
   ToFSensor sensor;
