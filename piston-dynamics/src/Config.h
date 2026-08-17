@@ -85,9 +85,9 @@ constexpr int PWM_MIN_DUTY =
 // NOTE: although changing the max duty cycle for torque and horsepower pwm
 // signals across displays is not technically accurate, the educational impact
 // of seeing changes in LED bar height across displays is much higher
-constexpr int SMALL_PISTON_MAX_DUTY = 190;
-constexpr int MEDIUM_PISTON_MAX_DUTY = 220;
-constexpr int LARGE_PISTON_MAX_DUTY = 255;
+constexpr uint16_t SMALL_PISTON_MAX_DUTY = 190;
+constexpr uint16_t MEDIUM_PISTON_MAX_DUTY = 220;
+constexpr uint16_t LARGE_PISTON_MAX_DUTY = 255;
 
 // --- ERROR HANDLING ---
 constexpr uint8_t MAX_SENSOR_ERRORS = 5;
