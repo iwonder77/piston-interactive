@@ -1,13 +1,14 @@
 #pragma once
 /**
- * MotionTracker.14:14:37
+ * MotionTracker.h
  *
  * Tracks piston motion, detects throw measurement, and estimates RPM with
  * zero-crossing algorithm
  */
+#include <Arduino.h>
+
 #include "Config.h"
 #include "RingWindow.h"
-#include <Arduino.h>
 
 class MotionTracker {
 public:
