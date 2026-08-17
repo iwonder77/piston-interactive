@@ -16,54 +16,23 @@
 
 #include "src/Config.h"
 #include "src/Debug.h"
-#include "src/RingWindow.h"
+#include "src/PwmReader.h"
 
-// ----- TIMER INTERRUPT VARIABLES FOR PWM CALC -----
-volatile unsigned long pulse_start_time = 0;
-volatile unsigned long pulse_width = 0;
-volatile unsigned long last_period_start = 0;
-volatile unsigned long period_length = 0;
-volatile bool new_data_available = false;
+PwmReader pwm_reader;
 
 // ----- LED SETUP -----
 CRGB leds[config::NUM_LEDS];
 
-// ----- RING WINDOW -----
-RingWindow<float, config::AVERAGE_SAMPLES> duty_cycle_filter;
-
 // ----- IDLE ANIMATION VARIABLES -----
-unsigned long lastActivityTime = 0;
-float wavePhase = 0;
+uint32_t lastActivityTime = 0;
+float wavePhase = 0.0f;
 
 // ----- CORE FUNC VARIABLES -----
 int currentTargetLEDs = 0;  // The base LED count from PWM calc
 
-// ========== INTERRUPT FUNCTION ==========
-void IRAM_ATTR pwmInterrupt() {
-  unsigned long current_time = micros();
-  int pinState = digitalRead(config::PWM_INPUT_PIN);
-
-  switch (pinState) {
-    // rising edge (start of a new pulse)
-    case HIGH:
-      // calculate period (time between consecutive rising edges)
-      if (last_period_start != 0) {
-        period_length = current_time - last_period_start;
-      }
-      last_period_start = current_time;
-      pulse_start_time = current_time;
-      break;
-    // falling edge, record pulse width time
-    case LOW:
-      pulse_width = current_time - pulse_start_time;
-      new_data_available = true;  // signal main loop that data is ready
-      break;
-  };
-}
-
 // ========== LED STRIP UPDATE FUNCTION ==========
 void updateDisplay() {
-  unsigned long currentTime = millis();
+  uint32_t currentTime = millis();
   bool isIdling = (currentTime - lastActivityTime) > config::IDLE_TIMEOUT_MS;
 
   int displayLEDs = currentTargetLEDs;
@@ -121,15 +90,14 @@ void updateDisplay() {
 
 void setup() {
   Serial.begin(115200);
-  pinMode(config::PWM_INPUT_PIN, INPUT_PULLUP);
   FastLED.addLeds<WS2815, config::LED_DATA_PIN, RGB>(leds, config::NUM_LEDS);
   FastLED.setBrightness(config::LED_BRIGHTNESS);
 
-  duty_cycle_filter.clear();
   lastActivityTime = millis();
 
-  attachInterrupt(digitalPinToInterrupt(config::PWM_INPUT_PIN), pwmInterrupt,
-                  CHANGE);
+  if (!pwm_reader.init()) {
+    DEBUG_PRINTLN("PWM reader init failed");
+  }
 
   currentTargetLEDs = config::INITIAL_TARGET_LEDS;
 
@@ -149,27 +117,16 @@ void setup() {
 void loop() {
   esp_task_wdt_reset();
   // make sure high time reading is valid
-  if (new_data_available) {
-    noInterrupts();
-    unsigned long safe_pulse_width = pulse_width;
-    unsigned long safe_period = period_length;
-    new_data_available = false;
-    interrupts();
-    if (safe_period >= config::MIN_VALID_PERIOD_US) {
-      float duty_cycle =
-        (float)safe_pulse_width / safe_period * config::PERCENT_MAX;
-      duty_cycle = constrain(duty_cycle, 0, config::PERCENT_MAX);
-      duty_cycle_filter.add(duty_cycle);
-      float smooth_duty_cycle = duty_cycle_filter.average();
-      int targetLEDs = map(smooth_duty_cycle, 0, config::PERCENT_MAX, 0,
-                           config::NUM_LEDS - 1);
-      targetLEDs = constrain(targetLEDs, 0, config::NUM_LEDS - 1);
+  float duty_cycle_pct = 0;
+  if (pwm_reader.read(duty_cycle_pct)) {
+    int targetLEDs = map(duty_cycle_pct, 0, config::PERCENT_MAX, 0,
+                         config::NUM_LEDS - 1);
+    targetLEDs = constrain(targetLEDs, 0, config::NUM_LEDS - 1);
 
-      // check if target LEDs changed significantly
-      if (abs(targetLEDs - currentTargetLEDs) >= config::LED_HYSTERESIS_THRESHOLD) {
-        currentTargetLEDs = targetLEDs;
-        lastActivityTime = millis();  // Reset idle timer
-      }
+    // check if target LEDs changed significantly
+    if (abs(targetLEDs - currentTargetLEDs) >= config::LED_HYSTERESIS_THRESHOLD) {
+      currentTargetLEDs = targetLEDs;
+      lastActivityTime = millis();  // Reset idle timer
     }
   }
   // always update display (either normal or with idle animation)

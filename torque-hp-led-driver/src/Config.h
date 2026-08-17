@@ -24,7 +24,7 @@ constexpr uint8_t PWM_INPUT_PIN = 32; // PWM from the piston-dynamics ESP32
 constexpr uint8_t LED_DATA_PIN = 3;   // WS2815 data line
 
 // --- LED STRIP ---
-constexpr uint16_t NUM_LEDS = 47;
+constexpr uint16_t NUM_LEDS = 14;
 constexpr uint8_t LED_BRIGHTNESS_PCT = 20;
 // FastLED wants 0..255 rather than a percentage (styleguide 5.1)
 constexpr uint8_t LED_BRIGHTNESS = (255 * LED_BRIGHTNESS_PCT) / 100;
