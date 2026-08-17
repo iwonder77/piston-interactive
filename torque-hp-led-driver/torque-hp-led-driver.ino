@@ -1,110 +1,54 @@
-/** 
-* Interactive: Piston Interactive
-* File: torque-hp-led-driver.ino
-* Description: QuinLED Dig Uno receives PWM signal whose strength is proportional to 
-* the torque or horsepower produced by spinning crankshaft, lights LED strip accordingly
-* 
-* Author: Isai Sanchez
-* Date: 7-16-25
-* Board Used: QuinLED Dig Uno
-*
-* (c) Thanksgiving Point Exhibits Electronics Team — 2025
-*/
+/**
+ * Interactive: Piston Interactive
+ * File: torque-hp-led-driver.ino
+ * Description: QuinLED Dig Uno receives PWM signal whose strength is
+ * proportional to the torque or horsepower produced by spinning crankshaft,
+ * lights LED strip accordingly
+ *
+ * Author: Isai Sanchez
+ * Date: 7-16-25
+ * Board Used: QuinLED Dig Uno
+ *
+ * (c) Thanksgiving Point Exhibits Electronics Team — 2025
+ */
 
-#include <FastLED.h>
 #include <esp_task_wdt.h>
 
+#include "src/BarDisplay.h"
 #include "src/Config.h"
 #include "src/Debug.h"
 #include "src/PwmReader.h"
 
 PwmReader pwm_reader;
+BarDisplay display;
 
-// ----- LED SETUP -----
-CRGB leds[config::NUM_LEDS];
-
-// ----- IDLE ANIMATION VARIABLES -----
-uint32_t lastActivityTime = 0;
-float wavePhase = 0.0f;
-
-// ----- CORE FUNC VARIABLES -----
-uint16_t currentTargetLEDs = 0;  // The base LED count from PWM calc
-
-// ========== LED STRIP UPDATE FUNCTION ==========
-void updateDisplay() {
-  uint32_t currentTime = millis();
-  bool isIdling = (currentTime - lastActivityTime) > config::IDLE_TIMEOUT_MS;
-
-  int displayLEDs = currentTargetLEDs;
-
-  if (isIdling && currentTargetLEDs > 0) {
-    // Create breathing/wave effect during idle
-    wavePhase += config::WAVE_PHASE_STEP;
-    if (wavePhase > TWO_PI) wavePhase = 0;
-
-    // Create wave that oscillates ±25% around the target
-    float waveMultiplier = 1.0 + (sin(wavePhase) * config::WAVE_AMPLITUDE);
-    displayLEDs = (int)(config::NUM_ANIMATION_LEDS * waveMultiplier);
-    displayLEDs = constrain(displayLEDs, 1, config::NUM_LEDS);
-
-    // Add subtle randomness for more organic feel
-    if (random(config::PERCENT_MAX) < config::JITTER_CHANCE_PCT) {
-      displayLEDs += random(-1, 2);  // ±1 LED jitter
-      displayLEDs = constrain(displayLEDs, 1, config::NUM_LEDS);
-    }
-  }
-
-  // Clear all LEDs
-  fill_solid(leds, config::NUM_LEDS, CRGB::Black);
-
-  // Choose color based on state
-  CRGB ledColor = isIdling ? CRGB(config::IDLE_COLOR_R, config::IDLE_COLOR_G,
-                                  config::IDLE_COLOR_B)
-                           : CRGB::Green;
-
-  // Create the wave effect you want
-  for (int i = 0; i < displayLEDs && i < config::NUM_LEDS; i++) {
-    if (isIdling) {
-      // During idle: create a wave intensity that fades toward the edges
-      float distanceFromCenter = abs(i - (displayLEDs / 2.0));
-      float maxDistance = displayLEDs / 2.0;
-      float intensity = 1.0 - (distanceFromCenter / maxDistance * config::EDGE_FADE);
-
-      // Add wave motion along the strip
-      float waveIntensity = sin(wavePhase + (i * config::WAVE_SPATIAL_FREQ)) * config::WAVE_INTENSITY_SCALE + config::WAVE_INTENSITY_OFFSET;
-      intensity *= waveIntensity;
-
-      leds[i] = CRGB(
-        (int)(ledColor.r * intensity),
-        (int)(ledColor.g * intensity),
-        (int)(ledColor.b * intensity));
-    } else {
-      // Normal operation: solid color
-      leds[i] = ledColor;
-    }
-  }
-
-  FastLED.show();
-}
-
+// last time the reading moved enough to count as activity
+uint32_t last_activity_ms = 0;
+// last time a frame was pushed to the strip
+uint32_t last_frame_ms = 0;
+// LED count the bar is currently showing
+uint16_t current_target_leds = 0;
+// NOTE: false until the first valid PWM measurement, which keeps the bar in its
+// idle animation at boot rather than showing an LED count nothing measured
+bool has_reading = false;
 
 void setup() {
   Serial.begin(115200);
-  FastLED.addLeds<WS2815, config::LED_DATA_PIN, RGB>(leds, config::NUM_LEDS);
-  FastLED.setBrightness(config::LED_BRIGHTNESS);
 
-  lastActivityTime = millis();
-
+  if (!display.init()) {
+    DEBUG_PRINTLN("LED display init failed");
+  }
   if (!pwm_reader.init()) {
     DEBUG_PRINTLN("PWM reader init failed");
   }
 
-  currentTargetLEDs = config::INITIAL_TARGET_LEDS;
+  last_activity_ms = millis();
+  last_frame_ms = last_activity_ms;
 
   esp_task_wdt_config_t wdt_config = {
-    .timeout_ms = config::WDT_TIMEOUT_MS,
-    .idle_core_mask = config::WDT_IDLE_CORE_MASK,
-    .trigger_panic = true,
+      .timeout_ms = config::WDT_TIMEOUT_MS,
+      .idle_core_mask = config::WDT_IDLE_CORE_MASK,
+      .trigger_panic = true,
   };
   if (esp_task_wdt_reconfigure(&wdt_config) != ESP_OK) {
     DEBUG_PRINTLN("WDT reconfigure failed");
@@ -116,23 +60,37 @@ void setup() {
 
 void loop() {
   esp_task_wdt_reset();
-  // make sure high time reading is valid
+
+  // NOTE: one time base for the whole pass (styleguide 6.1)
+  const uint32_t now_ms = millis();
+
   float duty_cycle_pct = 0.0f;
   if (pwm_reader.read(duty_cycle_pct)) {
-    int targetLEDs = map(duty_cycle_pct, 0, config::PERCENT_MAX, 0,
-                         config::NUM_LEDS - 1);
-    targetLEDs = constrain(targetLEDs, 0, config::NUM_LEDS - 1);
+    // NOTE: mapped in float and rounded rather than using map(), which is
+    // long-based and would truncate the fractional percent the running
+    // average produces - biasing the bar low by up to a whole LED
+    const float leds_f =
+        duty_cycle_pct / config::PERCENT_MAX * (config::NUM_LEDS - 1);
+    const uint16_t target_leds = static_cast<uint16_t>(
+        config::clampf(leds_f + 0.5f, 0.0f, config::NUM_LEDS - 1));
 
-    // check if target LEDs changed significantly
-    if (abs(targetLEDs - currentTargetLEDs) >= config::LED_HYSTERESIS_THRESHOLD) {
-      currentTargetLEDs = targetLEDs;
-      lastActivityTime = millis();  // Reset idle timer
+    // only redraw once the reading has moved enough to be worth it
+    const int32_t delta_leds = static_cast<int32_t>(target_leds) -
+                               static_cast<int32_t>(current_target_leds);
+    if (abs(delta_leds) >= config::LED_HYSTERESIS_THRESHOLD) {
+      current_target_leds = target_leds;
+      last_activity_ms = now_ms; // reset the idle timer
+      has_reading = true;
     }
   }
-  // always update display (either normal or with idle animation)
-  updateDisplay();
 
-  // TODO: replace with non-blocking frame timing (styleguide 6) when the
-  // animation moves into its own class
-  delay(config::FRAME_INTERVAL_MS);
+  // NOTE: fixed-cadence, non-blocking frame gate (styleguide 6). Holding the
+  // interval steady is also what keeps the breathing animation running at the
+  // same speed regardless of strip length or how long a read() takes.
+  if (now_ms - last_frame_ms >= config::FRAME_INTERVAL_MS) {
+    last_frame_ms = now_ms;
+    const bool is_idling =
+        !has_reading || (now_ms - last_activity_ms) > config::IDLE_TIMEOUT_MS;
+    display.update(current_target_leds, is_idling);
+  }
 }

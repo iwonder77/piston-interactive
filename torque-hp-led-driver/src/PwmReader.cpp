@@ -34,12 +34,12 @@ bool PwmReader::read(float &duty_cycle_pct) {
   return true;
 }
 
-void IRAM_ATTR PwmReader::isrTrampoline() {
+void PwmReader::isrTrampoline() {
   if (instance_)
     instance_->handleEdge();
 }
 
-void IRAM_ATTR PwmReader::handleEdge() {
+void PwmReader::handleEdge() {
   uint32_t current_time = micros();
   uint8_t pin_state = digitalRead(config::PWM_INPUT_PIN);
 
