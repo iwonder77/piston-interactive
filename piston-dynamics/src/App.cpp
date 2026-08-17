@@ -1,9 +1,6 @@
 #include "App.h"
 #include "Debug.h"
 
-/**
- * @brief handles sensor and pwm setup
- */
 void App::setup() {
   DEBUG_PRINTLN("Pos(mm),Throw(mm),RPM,Torque,HP");
 
@@ -28,10 +25,6 @@ void App::setup() {
   state = AppState::IDLE;
 }
 
-/**
- * @brief finite-state machine logic
- * ensures app is in healthy state before running
- */
 void App::loopOnce() {
   switch (state) {
   case AppState::IDLE:
@@ -46,11 +39,6 @@ void App::loopOnce() {
   }
 }
 
-/**
- * @brief main method for coordination of all other classes
- * ensures sensor data is valid/filtered, updates motion tracker with these
- * readings, and computes engine parameters
- */
 void App::run() {
   // NOTE: non-blocking delay logic here to ensure sensor runs smoothly
   // according to the timing budget variable we set
@@ -104,9 +92,6 @@ void App::run() {
   }
 }
 
-/**
- * @brief attempts app recovery by re-initializing sensor in place
- */
 void App::recover() {
   if (!health.allowRecovery())
     return; // wait between attempts
