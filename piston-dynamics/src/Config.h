@@ -10,9 +10,38 @@
 #include <Arduino.h>
 
 namespace config {
+enum class PistonSize : uint8_t { SMALL, MEDIUM, LARGE };
+
+// ===== SET PER INSTALLATION - see README "Deployment & Maintenance" =====
+// NOTE: this is the only constant that differs between the three exhibits. It
+// sets the PWM duty ceiling so each unit's bar reaches a visibly different
+// height at the same RPM. The value is echoed in the boot banner on serial.
+constexpr PistonSize DISPLAY_TYPE = PistonSize::SMALL;
+
+/**
+ * @brief Human readable name for a variant, used by the boot banner.
+ *
+ * @param size variant to name
+ * @return static string, never null
+ */
+static inline const char *pistonSizeName(PistonSize size) {
+  switch (size) {
+  case PistonSize::SMALL:
+    return "SMALL";
+  case PistonSize::MEDIUM:
+    return "MEDIUM";
+  case PistonSize::LARGE:
+    return "LARGE";
+  }
+  return "UNKNOWN";
+}
+
 // --- WATCHDOG & BUS TIMEOUTS ---
 constexpr uint32_t WDT_TIMEOUT_MS = 5000;
 constexpr uint32_t WDT_IDLE_CORE_MASK = (1 << 0);
+// NOTE: the ToF sensor sits on the default I2C bus - GPIO 21 (SDA) and
+// GPIO 22 (SCL). Wire.begin() is called with no arguments, so those pins come
+// from the ESP32 core and are deliberately not redefined here.
 constexpr uint16_t I2C_TIMEOUT_MS = 100;
 
 // --- VL53L1X ---
@@ -21,7 +50,8 @@ constexpr uint8_t ROI_W = 6;                // 4..16 typical
 constexpr uint8_t ROI_H = 6;
 constexpr uint8_t ROI_CENTER = 199;
 constexpr uint16_t TIMING_BUDGET_US = 15000; // 15 ms budget
-constexpr uint16_t INTER_MEAS_MS = 15;       // continuous period
+constexpr uint16_t SENSOR_POLL_MS = TIMING_BUDGET_US / 1000;
+constexpr uint16_t INTER_MEAS_MS = 15; // continuous period
 
 // --- SENSOR READING WINDOW ---
 constexpr float MIN_VALID_MM = 20.0f; // 4 cm is lowest reading recommended from
@@ -56,11 +86,7 @@ constexpr float RPM_DECAY_FACTOR = 0.99f;      // decay multiplier
 constexpr float RPM_DECAY_MIN = 10.0f;         // zero out below this
 
 // --- ENGINE MODEL ---
-enum class PistonSize : uint8_t { SMALL, MEDIUM, LARGE };
-// NOTE: piston size display type must be different for each installation and
-// manually changed here a little tedious to manually change and reflash, maybe
-// in the future we could use dip switches for the 3 piston sizes
-constexpr PistonSize DISPLAY_TYPE = PistonSize::SMALL;
+// NOTE: DISPLAY_TYPE lives at the top of this file (styleguide 5.2)
 constexpr float PISTON_AREA_CM2 = 50.0f;
 constexpr float MIN_DETECTED_RPM = 2.0f;
 constexpr float MAX_DETECTED_RPM = 200.0f;
@@ -76,11 +102,11 @@ constexpr float EMA_POS_ALPHA = 0.4f; // position smoothing
 constexpr float EMA_RPM_ALPHA = 0.3f; // rpm smoothing
 
 // --- LEDC (PWM) ---
-constexpr int TORQUE_LED_PIN = 18;
-constexpr int HP_LED_PIN = 19;
+constexpr uint8_t TORQUE_LED_PIN = 18;
+constexpr uint8_t HP_LED_PIN = 19;
 constexpr uint32_t PWM_FREQ_HZ = 5000; // 5kHz PWM frequency
 constexpr uint8_t PWM_RES_BITS = 8;    // 8-bit resolution (0...255)
-constexpr int PWM_MIN_DUTY =
+constexpr uint32_t PWM_MIN_DUTY =
     20; // allow small readings for torque and hp to pass through
 // NOTE: although changing the max duty cycle for torque and horsepower pwm
 // signals across displays is not technically accurate, the educational impact
