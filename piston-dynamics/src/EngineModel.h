@@ -27,9 +27,9 @@ public:
    *
    * @return The result of the calculations as an EngineReadout struct
    */
-  EngineReadout compute(float throwMM, float rpm) {
+  static EngineReadout compute(float throw_mm, float rpm) {
     EngineReadout r;
-    if (rpm <= 0 || throwMM < config::MIN_THROW_FOR_MOTION_MM) {
+    if (rpm <= 0 || throw_mm < config::MIN_THROW_FOR_MOTION_MM) {
       r.torque = 0;
       r.hp = 0;
       return r;
@@ -37,7 +37,7 @@ public:
 
     // simplified pressure estimate ∝ RPM^2
     float pressure = (rpm * rpm) / 10000.0f * config::PRESSURE_MULTIPLIER;
-    float torque = throwMM * config::PISTON_AREA_CM2 * pressure *
+    float torque = throw_mm * config::PISTON_AREA_CM2 * pressure *
                    config::TORQUE_SCALE_FACTOR;
     torque = config::clampf(torque, 0.0f, config::MAX_DISPLAY_TORQUE);
     float hp = (torque * rpm) / 1000.0f;
