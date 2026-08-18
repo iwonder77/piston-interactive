@@ -9,34 +9,33 @@
 
 #include "Config.h"
 
-// lighteweight WATCHDOG
 class Health {
 public:
   void onBadRead() {
-    if (errCount < 255)
-      ++errCount;
-    if (errCount >= config::MAX_SENSOR_ERRORS)
-      unhealthy = true;
+    if (error_count_ < 255)
+      ++error_count_;
+    if (error_count_ >= config::MAX_SENSOR_ERRORS)
+      unhealthy_ = true;
   }
-  void onGoodRead() { errCount = 0; }
+  void onGoodRead() { error_count_ = 0; }
 
-  bool healthy() const { return !unhealthy; }
+  bool healthy() const { return !unhealthy_; }
   void markHealthy() {
-    unhealthy = false;
-    errCount = 0;
+    unhealthy_ = false;
+    error_count_ = 0;
   }
 
   bool allowRecovery() {
     uint32_t now = millis();
-    if (now - lastRecoveryTime >= config::ERROR_RECOVERY_PERIOD) {
-      lastRecoveryTime = now;
+    if (now - last_recovery_time_ >= config::ERROR_RECOVERY_PERIOD) {
+      last_recovery_time_ = now;
       return true;
     }
     return false;
   }
 
 private:
-  uint8_t errCount = 0;
-  bool unhealthy = false;
-  uint32_t lastRecoveryTime = 0;
+  uint8_t error_count_ = 0;
+  bool unhealthy_ = false;
+  uint32_t last_recovery_time_ = 0;
 };
