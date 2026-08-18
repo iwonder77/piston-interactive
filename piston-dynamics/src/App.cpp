@@ -1,7 +1,16 @@
 #include "App.h"
 #include "Debug.h"
+#include "EngineModel.h"
 
 void App::setup() {
+  // NOTE: boot banner - reports which variant is flashed, since nothing else
+  // does so at runtime. Compiled out with the rest of the logging when
+  // DEBUG_LEVEL is 0. Keep the CSV header last so the Serial Plotter picks it
+  // up as the column labels.
+  DEBUG_PRINTLN();
+  DEBUG_PRINTLN("=== Piston Interactive :: piston-dynamics ===");
+  DEBUG_PRINT("Variant: ");
+  DEBUG_PRINTLN(config::pistonSizeName(config::DISPLAY_TYPE));
   DEBUG_PRINTLN("Pos(mm),Throw(mm),RPM,Torque,HP");
 
   if (!sensor.init()) {
@@ -9,7 +18,7 @@ void App::setup() {
     state = AppState::ERROR_RECOVERY;
     return;
   }
-  if (!led.beginPWM()) {
+  if (!led.init()) {
     DEBUG_PRINTLN("LED PWM init failed");
     state = AppState::ERROR_RECOVERY;
     return;
@@ -40,10 +49,11 @@ void App::loopOnce() {
 }
 
 void App::run() {
+  uint32_t now = millis();
   // NOTE: non-blocking delay logic here to ensure sensor runs smoothly
   // according to the timing budget variable we set
-  if (millis() - last_sensor_read_ >= config::TIMING_BUDGET_US / 1000) {
-    last_sensor_read_ = millis();
+  if (now - last_sensor_read_ >= config::SENSOR_POLL_MS) {
+    last_sensor_read_ = now;
     // "scratchpad" for fresh position reading (is modified on every read)
     float pos = 0.0f;
     bool ok = false;
@@ -74,7 +84,7 @@ void App::run() {
 
     // compute outputs
     EngineReadout r =
-        engine.compute(tracker.getCrankshaftThrowMM(), tracker.getRPMs());
+        EngineModel::compute(tracker.getCrankshaftThrowMM(), tracker.getRPMs());
     led.show(r.torque, r.hp);
 
     // CSV for Serial Plotter

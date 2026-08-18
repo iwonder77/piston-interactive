@@ -8,7 +8,6 @@
 
 #include <Arduino.h>
 
-#include "EngineModel.h"
 #include "Health.h"
 #include "LedOutput.h"
 #include "MotionTracker.h"
@@ -52,7 +51,6 @@ private:
 
   ToFSensor sensor;
   MotionTracker tracker;
-  EngineModel engine;
   LedOutput led;
   Health health;
   AppState state = AppState::INIT;
