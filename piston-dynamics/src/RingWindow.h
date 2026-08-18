@@ -9,6 +9,9 @@
 
 template <typename T, size_t CAPACITY> class RingWindow {
 public:
+  /**
+   * @brief Constructs an empty window with every slot zeroed.
+   */
   RingWindow() : filled_(0), head_(0) {
     for (size_t i = 0; i < CAPACITY; ++i)
       buf_[i] = T();
@@ -16,6 +19,12 @@ public:
   RingWindow(const RingWindow &) = delete;
   RingWindow &operator=(const RingWindow &) = delete;
 
+  /**
+   * @brief Empties the window, discarding every stored sample.
+   *
+   * Leaves the object in the same state as a freshly constructed one, so it is
+   * safe to call when re-initialising the owner.
+   */
   void clear() {
     filled_ = 0;
     head_ = 0;
@@ -23,7 +32,11 @@ public:
       buf_[i] = T();
   }
 
-  // write new sample to buffer
+  /**
+   * @brief Writes one sample, overwriting the oldest once the window is full.
+   *
+   * @param s sample to store
+   */
   void add(T s) {
     buf_[head_] = s;                // write sample to head
     head_ = (head_ + 1) % CAPACITY; // advance head (modulo % ensures we circle
@@ -33,11 +46,29 @@ public:
                  // cap)
   }
 
-  // checks if any samples have been written to buffer
+  /**
+   * @brief Whether the window holds at least one sample.
+   *
+   * NOTE: this is not "is the window full" - it is true as soon as a single
+   * sample has been added. Use it to guard the accessors below, which return
+   * a default-constructed value on an empty window.
+   *
+   * @return true if one or more samples have been added since the last clear()
+   */
   bool isFilled() const { return filled_ > 0; }
 
+  /**
+   * @brief Number of valid samples currently stored.
+   *
+   * @return sample count, never greater than CAPACITY
+   */
   size_t size() const { return filled_; }
 
+  /**
+   * @brief Smallest of the stored samples.
+   *
+   * @return the minimum, or a default-constructed T if the window is empty
+   */
   T getMin() const {
     if (filled_ == 0)
       return T();
@@ -49,6 +80,11 @@ public:
     return m;
   }
 
+  /**
+   * @brief Largest of the stored samples.
+   *
+   * @return the maximum, or a default-constructed T if the window is empty
+   */
   T getMax() const {
     if (filled_ == 0)
       return T();
@@ -60,7 +96,14 @@ public:
     return m;
   }
 
-  // return average
+  /**
+   * @brief Mean of the stored samples.
+   *
+   * Averages over the samples actually present, not over CAPACITY, so the
+   * result is meaningful before the window has filled.
+   *
+   * @return the mean as a float, or 0.0f if the window is empty
+   */
   float average() const {
     if (filled_ == 0)
       return 0.0f;
@@ -70,6 +113,14 @@ public:
     return sum / static_cast<float>(filled_);
   }
 
+  /**
+   * @brief Median of the stored samples.
+   *
+   * Copies into a fixed-size stack array and insertion sorts it, so cost grows
+   * with the square of the sample count - fine for the small windows used here.
+   *
+   * @return the median, or a default-constructed T if the window is empty
+   */
   T median() const {
     if (filled_ == 0)
       return T();

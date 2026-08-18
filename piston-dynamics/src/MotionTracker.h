@@ -37,13 +37,33 @@ public:
    */
   void decayRPM();
 
+  /**
+   * @brief Whether the crankshaft is turning with a usable throw measurement.
+   *
+   * Requires all three: motion was detected recently, a throw has passed its
+   * validity checks, and that throw is large enough to be worth displaying.
+   *
+   * @return true when the tracker's output can be trusted
+   */
   bool isMoving() const {
     return moving_ && is_throw_valid_ &&
            crankshaft_throw_ >= config::MIN_THROW_FOR_MOTION_MM;
   }
+  /**
+   * @brief Most recent crankshaft throw measurement.
+   *
+   * @return throw in millimetres, or 0.0f when no valid throw is known
+   */
   float getCrankshaftThrowMM() const { return crankshaft_throw_; }
+  /**
+   * @brief Current RPM estimate.
+   *
+   * Smoothed and decayed, so it trails the crankshaft rather than tracking it
+   * instantaneously.
+   *
+   * @return revolutions per minute, 0.0f when stopped
+   */
   float getRPMs() const { return rpm_; }
-  uint32_t getLastRPMUpdate() const { return last_rpm_update_ms_; }
 
 private:
   enum class Edge : uint8_t { UNKNOWN, ABOVE, BELOW };
