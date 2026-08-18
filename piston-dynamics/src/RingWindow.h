@@ -67,7 +67,7 @@ public:
     float sum = 0.0f;
     for (size_t i = 0; i < filled_; ++i)
       sum += buf_[i];
-    return sum / float(filled_);
+    return sum / static_cast<float>(filled_);
   }
 
   T median() const {
